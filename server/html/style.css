@@ -1,0 +1,18 @@
+div#locations {
+    display: flex;
+}
+
+div#locations canvas {
+    max-width: 30%;
+    margin: 10px 1.666%;
+}
+
+div#debug {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+div#debug canvas {
+    max-width: 40%;
+    margin: 50px 5%;
+}
