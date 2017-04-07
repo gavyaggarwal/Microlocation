@@ -50,11 +50,11 @@ var location = {
 }
 
 function noise() {
-    debug[0].value += Math.random() - 0.55;
-    debug[1].value += Math.random() - 0.49;
-    locations[4].x += Math.random() * 0.1 - 0.05;
-    locations[4].y += Math.random() * 0.1 - 0.05;
-    locations[4].z += Math.random() * 0.1 - 0.05;
+    location.debug[0].value += Math.random() - 0.55;
+    location.debug[1].value += Math.random() - 0.49;
+    location.locations[4].x += Math.random() * 0.1 - 0.05;
+    location.locations[4].y += Math.random() * 0.1 - 0.05;
+    location.locations[4].z += Math.random() * 0.1 - 0.05;
 }
 
 
@@ -67,12 +67,13 @@ app.ws('/socket', function(ws, req) {
   console.log("New connection has opened!");
 
   //send updated information every 100 ms
-  setTimeout(function(){
+  var sendData = setInterval(function(){
     noise();
     ws.send(JSON.stringify(location));
   }, 100);
 
   ws.on('close', function() {
+      clearInterval(sendData);
       console.log('The connection was closed!');
   });
 
