@@ -1,49 +1,3 @@
-var locations = [
-    {
-        device: "A",
-        x: 0,
-        y: 0,
-        z: 1,
-    },
-    {
-        device: "B",
-        x: 1,
-        y: 0,
-        z: 0,
-    },
-    {
-        device: "C",
-        x: 0,
-        y: 0,
-        z: -1,
-    },
-    {
-        device: "D",
-        x: -1,
-        y: 0,
-        z: 0,
-    },
-    {
-        device: "E",
-        x: 0,
-        y: 0.5,
-        z: 0,
-    }
-]
-
-var debug = [
-    {
-        device: "A",
-        field: "RSSI Value",
-        value: 12
-    },
-    {
-        device: "C",
-        field: "Accelerometer X",
-        value: 8
-    }
-];
-
 var colorMappings = {
     A: "rgb(255, 99, 132)",
     B: "rgb(54, 162, 235)",
@@ -99,7 +53,7 @@ function makeLocationChart(plane, title) {
     });
 }
 
-function makeLocationCharts(locations) {
+function updateLocationCharts(locations) {
     if (locationCharts.xy == null) {
         makeLocationChart("xy", "Front View");
     }
@@ -183,7 +137,7 @@ function makeDebugChart(name, deviceName) {
     };
 }
 
-function makeDebugCharts(debug) {
+function updateDebugCharts(debug) {
     for (var i = 0; i < debug.length; i++) {
         var name = "Device " + debug[i].device + ": " + debug[i].field;
         if (!(name in debugCharts)) {
@@ -197,31 +151,21 @@ function makeDebugCharts(debug) {
 }
 
 function setUpWebSocket() {
-    var ws = new WebSocket("ws://localhost:9998/echo");
+    var ws = new WebSocket("ws://192.168.0.143:3000/socket");
 
     ws.onopen = function() {
-     // Web Socket is connected, send data using send()
-     ws.send("Message to send");
-     alert("Message is sent...");
+        console.log("WebSocket Connected");
     };
 
     ws.onmessage = function (evt) {
-     var received_msg = evt.data;
-     alert("Message is received...");
+        var data = JSON.parse(evt.data);
+        updateLocationCharts(data.locations);
+        updateDebugCharts(data.debug);
     };
 
     ws.onclose = function() {
-     // websocket is closed.
-     alert("Connection is closed...");
+        console.log("WebSocket Disconnected");
     };
-}
-
-function noise() {
-    debug[0].value += Math.random() - 0.55;
-    debug[1].value += Math.random() - 0.49;
-    locations[4].x += Math.random() * 0.1 - 0.05;
-    locations[4].y += Math.random() * 0.1 - 0.05;
-    locations[4].z += Math.random() * 0.1 - 0.05;
 }
 
 window.onload = function() {
@@ -229,10 +173,4 @@ window.onload = function() {
     Chart.defaults.global.tooltips.enabled = false;
 
     setUpWebSocket();
-
-    setInterval(function() {
-        noise();
-        makeLocationCharts(locations);
-        makeDebugCharts(debug);
-    }, 100);
 }
