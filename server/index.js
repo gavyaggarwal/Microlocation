@@ -2,67 +2,23 @@ var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
 
-var formattedData = {
-  locations: [
-    {
-        device: "A",
-        x: 0,
-        y: 0,
-        z: 1,
-    },
-    {
-        device: "B",
-        x: 1,
-        y: 0,
-        z: 0,
-    },
-    {
-        device: "C",
-        x: 0,
-        y: 0,
-        z: -1,
-    },
-    {
-        device: "D",
-        x: -1,
-        y: 0,
-        z: 0,
-    },
-    {
-        device: "E",
-        x: 0,
-        y: 0.5,
-        z: 0,
-    }
-  ],
-  debug: [
-    {
-        device: "A",
-        field: "RSSI Value",
-        value: 12
-    },
-    {
-        device: "C",
-        field: "Accelerometer X",
-        value: 8
-    }
-  ]
-};
+app.use(express.static("html"));
 
+var formattedData = {};
 var rawData = {};
 
 function clearData() {
   for (key in rawData) {
-    if (Date.now() - rawData[key].lastUpdate >= 5000) {
+    if (Date.now() - rawData[key].lastUpdate >= 300000) {
       delete rawData[key];
     };
   }
 };
 
 function addData(info) {
-  if rawData.hasOwnProperty(info.device) {
-    idx = rawData[info.device].info.findIndex(x => x.field == info.field);
-    if (idx == -1) {
+  if (rawData.hasOwnProperty(info.device)) {
+    var idx = rawData[info.device].info.filter(x => x.field == info.field)[0];
+    if (idx == undefined) {
       rawData[info.device].info.push(info);
     }
     else {
@@ -70,18 +26,27 @@ function addData(info) {
     }
   }
   else {
-    rawData[info.device].info.push(info);
+    rawData[info.device] = {};
+    rawData[info.device].info = [info];
   };
   rawData[info.device].lastUpdate = Date.now();
 };
 
 function formatData() {
-  
-}
-
-app.get('/', function(req, res){
-  res.send('hello world');
-});
+  formattedData = {locations: [], debug: []};
+  for (device in rawData) {
+    for (i in rawData[device].info) {
+      var prop = rawData[device].info[i];
+      if (prop.field == 'Location') {
+        delete prop.field;
+        formattedData.locations.push(prop);
+      }
+      else {
+        formattedData.debug.push(prop);
+      };
+    };
+  };
+};
 
 app.ws('/socket', function(ws, req) {
 
@@ -104,6 +69,12 @@ app.ws('/socket', function(ws, req) {
   });
   //console.log('socket', req);
 
+});
+
+app.ws('/messages', function(ws) {
+  ws.on('message', function(msg) {
+    addData(msg);
+  });
 });
 
 app.listen(process.env.PORT || 3000);
