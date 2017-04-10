@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
 
-var location = {
+var formattedData = {
   locations: [
     {
         device: "A",
@@ -47,16 +47,37 @@ var location = {
         value: 8
     }
   ]
-}
+};
 
-function noise() {
-    location.debug[0].value += Math.random() - 0.55;
-    location.debug[1].value += Math.random() - 0.49;
-    location.locations[4].x += Math.random() * 0.1 - 0.05;
-    location.locations[4].y += Math.random() * 0.1 - 0.05;
-    location.locations[4].z += Math.random() * 0.1 - 0.05;
-}
+var rawData = {};
 
+function clearData() {
+  for (key in rawData) {
+    if (Date.now() - rawData[key].lastUpdate >= 5000) {
+      delete rawData[key];
+    };
+  }
+};
+
+function addData(info) {
+  if rawData.hasOwnProperty(info.device) {
+    idx = rawData[info.device].info.findIndex(x => x.field == info.field);
+    if (idx == -1) {
+      rawData[info.device].info.push(info);
+    }
+    else {
+      rawData[info.device].info[idx] = info
+    }
+  }
+  else {
+    rawData[info.device].info.push(info);
+  };
+  rawData[info.device].lastUpdate = Date.now();
+};
+
+function formatData() {
+  
+}
 
 app.get('/', function(req, res){
   res.send('hello world');
@@ -68,8 +89,9 @@ app.ws('/socket', function(ws, req) {
 
   //send updated information every 100 ms
   var sendData = setInterval(function(){
-    noise();
-    ws.send(JSON.stringify(location));
+    clearData();
+    formatData();
+    ws.send(JSON.stringify(formattedData));
   }, 100);
 
   ws.on('close', function() {
