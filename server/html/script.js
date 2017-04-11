@@ -151,7 +151,7 @@ function updateDebugCharts(debug) {
 }
 
 function setUpWebSocket() {
-    var ws = new WebSocket("ws://microlocation.herokuapp.com/socket");
+    var ws = new WebSocket("wss://microlocation.herokuapp.com/socket");
 
     ws.onopen = function() {
         console.log("WebSocket Connected");
