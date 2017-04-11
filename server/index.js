@@ -21,8 +21,8 @@ function findField(arr, val) {
     if (arr[i].field == val) {
       return i;
     }
-    return -1;
   }
+  return -1;
 }
 
 function addData(info) {
