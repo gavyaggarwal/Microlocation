@@ -15,9 +15,10 @@ function clearData() {
   }
 };
 
-function findField(arr, key = 'field', val) {
+function findField(arr, val) {
+  console.log(val);
   for (i=0; i<arr.length; i++) {
-    if (arr[i][key] == val) {
+    if (arr[i].field == val) {
       return i;
     }
     return -1;
@@ -27,6 +28,7 @@ function findField(arr, key = 'field', val) {
 function addData(info) {
   if (rawData.hasOwnProperty(info.device)) {
     var idx = findField(rawData[info.device].info, info.field);
+    console.log(idx);
     if (idx == -1) {
       rawData[info.device].info.push(info);
     }
