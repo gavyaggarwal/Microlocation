@@ -15,10 +15,19 @@ function clearData() {
   }
 };
 
+function findField(arr, key = 'field', val) {
+  for (i=0; i<arr.length; i++) {
+    if (arr[i][key] == val) {
+      return i;
+    }
+    return -1;
+  }
+}
+
 function addData(info) {
   if (rawData.hasOwnProperty(info.device)) {
-    var idx = rawData[info.device].info.filter(x => x.field == info.field)[0];
-    if (idx == undefined) {
+    var idx = findField(rawData[info.device].info, info.field);
+    if (idx == -1) {
       rawData[info.device].info.push(info);
     }
     else {
@@ -38,14 +47,16 @@ function formatData() {
     for (i in rawData[device].info) {
       var prop = rawData[device].info[i];
       if (prop.field == 'Location') {
-        delete prop.field;
-        formattedData.locations.push(prop);
+        item = Object.assign({}, prop);
+        delete item.field;
+        formattedData.locations.push(item);
       }
       else {
         formattedData.debug.push(prop);
       };
     };
   };
+  console.log(formattedData);
 };
 
 app.ws('/socket', function(ws, req) {
@@ -74,6 +85,7 @@ app.ws('/socket', function(ws, req) {
 app.ws('/messages', function(ws) {
   ws.on('message', function(msg) {
     addData(JSON.parse(msg));
+    console.log(JSON.stringify(rawData));
   });
 });
 
