@@ -73,7 +73,7 @@ app.ws('/socket', function(ws, req) {
 
 app.ws('/messages', function(ws) {
   ws.on('message', function(msg) {
-    addData(JSON.parse(msg);
+    addData(JSON.parse(msg));
   });
 });
 
