@@ -1,9 +1,12 @@
 package com.example.redcross.app;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
+
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -13,51 +16,25 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 public class MainActivity extends AppCompatActivity {
-
-    public static PersistentCookieStore myCookieStore;
-    public static Context mainContext;
-    public WebSocketClient mWebSocketClient;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        URI uri;
-        try {
-            uri = new URI("ws://microlocation.herokuapp.com/messages");
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-            return;
-        }
+        // Configure UI
+        TextView textView = (TextView)findViewById(R.id.textView);
+        textView.setText("Device " + DeviceManager.getDeviceID(this));
 
-        mWebSocketClient = new WebSocketClient(uri) {
-            @Override
-            public void onOpen(ServerHandshake serverHandshake) {
-                Log.i("Websocket", "Opened");
-                mWebSocketClient.send("{ \"device\": \"A\", \"field\": \"Location\", \"x\": 0.52, \"y\": -0.213, \"z\": 1.30}");
-            }
+        int backgroundColor = Color.parseColor(DeviceManager.getDeviceColor(this));
+        getWindow().getDecorView().setBackgroundColor(backgroundColor);
 
-            @Override
-            public void onMessage(String s) {
-                final String message = s;
-                Log.i("Websocket", "Message " + "{ \"device\": \"A\", \"field\": \"Location\","
-                        + "\"x\": 0.52, \"y\": -0.213, \"z\": 1.30}");
-            }
+        // Configure Server Connection
+        ServerConnection connection = ServerConnection.instance;
+        connection.deviceID = DeviceManager.getDeviceID(this);
+        //connection.sendLocation(1, 1, 1);
 
-            @Override
-            public void onClose(int i, String s, boolean b) {
-                Log.i("Websocket", "Closed " + s);
-            }
+        // Start Demo
+        new AccelerometerDemo(this);
 
-            @Override
-            public void onError(Exception e) {
-                Log.i("Websocket", "Error " + e.getMessage());
-            }
-        };
-
-        mWebSocketClient.connect();
-//        new SocketHandler("{ \"device\": \"A\", \"field\": \"Location\","
-//                + "\"x\": 0.52, \"y\": -0.213, \"z\": 1.30}", this);
-        Log.d("debugMessage", "we got to this point");
     }
 }
