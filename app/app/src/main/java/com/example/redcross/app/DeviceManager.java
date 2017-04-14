@@ -19,7 +19,7 @@ public final class DeviceManager {
             case "720d0aad5060d35f":
                 return "C";
             default:
-                Log.d("microlocation", "Encountered New Device with ID: " + id);
+                Log.d("Microlocation", "Encountered New Device with ID: " + id);
                 return id;
         }
     }

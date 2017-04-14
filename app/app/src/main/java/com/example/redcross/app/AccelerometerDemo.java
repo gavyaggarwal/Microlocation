@@ -28,8 +28,7 @@ public class AccelerometerDemo implements SensorEventListener {
             float x = event.values[0];
             float y = event.values[1];
             float z = event.values[2];
-            Log.d("Accelerometer", "value changed x: " + Float.toString(x) + " y: " + Float.toString(y) + " z:" + Float.toString(z));
-
+            ServerConnection.instance.sendDebug("Accelerometer Z", z);
         }
     }
 

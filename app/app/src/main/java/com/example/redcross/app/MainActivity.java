@@ -19,19 +19,22 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
 
+        // Configure UI
         TextView textView = (TextView)findViewById(R.id.textView);
         textView.setText("Device " + DeviceManager.getDeviceID(this));
 
         int backgroundColor = Color.parseColor(DeviceManager.getDeviceColor(this));
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
 
-        //new AccelerometerDemo(this);
+        // Configure Server Connection
+        ServerConnection connection = ServerConnection.instance;
+        connection.deviceID = DeviceManager.getDeviceID(this);
+        //connection.sendLocation(1, 1, 1);
 
-        new ServerConnection();
-
+        // Start Demo
+        new AccelerometerDemo(this);
 
     }
 }

@@ -16,6 +16,7 @@ public class ServerConnection {
     public static ServerConnection instance = new ServerConnection();
     private WebSocketClient client;
     private boolean connectionOpen;
+    public String deviceID;
 
     public ServerConnection() {
         URI uri;
@@ -29,27 +30,46 @@ public class ServerConnection {
         client = new WebSocketClient(uri) {
             @Override
             public void onOpen(ServerHandshake handshakedata) {
-                Log.i("Websocket", "Opened");
-                client.send("{ \"device\": \"A\", \"field\": \"Location\", \"x\": 0.52, \"y\": -0.213, \"z\": 1.30}");
+                connectionOpen = true;
+                Log.i("Microlocation", "Socket Open");
             }
 
             @Override
             public void onMessage(String message) {
-                Log.i("Websocket", message);
+                Log.i("Microlocation", "Received Message on Socket: " + message);
             }
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
-                Log.i("Websocket", "Closed " + reason);
+                connectionOpen = false;
+                Log.i("Microlocation", "Socket Closed " + reason);
             }
 
             @Override
             public void onError(Exception ex) {
-                Log.i("Websocket", "Error " + ex.getMessage());
+                connectionOpen = false;
+                Log.i("Microlocation", "Socket Error " + ex.getMessage());
             }
         };
 
         client.connect();
+    }
+
+    public void sendLocation(float x, float y, float z) {
+        if (connectionOpen && deviceID != null) {
+            String xStr = Float.toString(x);
+            String yStr = Float.toString(y);
+            String zStr = Float.toString(z);
+            client.send("{ \"device\": \"" + deviceID + "\", \"field\": \"Location\", \"x\": " +
+                    xStr + ", \"y\": " + yStr + ", \"z\": " + zStr + "}");
+        }
+    }
+
+    public void sendDebug(String name, float value) {
+        if (connectionOpen && deviceID != null) {
+            client.send("{ \"device\": \"" + deviceID + "\", \"field\": \"" + name + "\", " +
+                    "\"value\": " + Float.toString(value) + "}");
+        }
     }
 
 }
