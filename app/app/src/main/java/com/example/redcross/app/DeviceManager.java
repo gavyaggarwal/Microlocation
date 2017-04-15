@@ -18,6 +18,8 @@ public final class DeviceManager {
                 return "B";
             case "720d0aad5060d35f":
                 return "C";
+            case "cb7458c492fc64a9":
+                return "D";
             default:
                 Log.d("Microlocation", "Encountered New Device with ID: " + id);
                 return id;
