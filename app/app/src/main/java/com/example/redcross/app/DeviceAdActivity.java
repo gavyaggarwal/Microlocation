@@ -37,6 +37,10 @@ public class DeviceAdActivity extends ListActivity {
         //String   ble_uuid = Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
         String ble_uuid = UUID.randomUUID().toString();
         ParcelUuid pUuid = new ParcelUuid(UUID.fromString(ble_uuid));
+
+        InfoManager testData = new InfoManager();
+        String locData = testData.deviceLocation(this);
+
         Log.d("par id", pUuid.toString());
         Log.d( "BLE AD", "Advertising uuid set up ");
         adSettings = new AdvertiseSettings.Builder()
@@ -49,7 +53,7 @@ public class DeviceAdActivity extends ListActivity {
                 .setIncludeDeviceName(true)
                 .setIncludeTxPowerLevel(true)
                 .addServiceUuid( pUuid )
-                .addServiceData( pUuid, ":)".getBytes(Charset.forName("UTF-8")))
+                .addServiceData( pUuid, locData.getBytes(Charset.forName("UTF-8")))
                 .build();
         Log.d( "BLE AD", "Advertising setup Success ");
 
