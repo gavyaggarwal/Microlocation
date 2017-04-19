@@ -29,17 +29,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialize Device Manager and Server Connection
+        DeviceManager.instance.setContext(this);
+        ServerConnection.instance.deviceID = DeviceManager.instance.id;
+
         // Configure UI
         TextView textView = (TextView)findViewById(R.id.textView);
-        textView.setText("Device " + DeviceManager.getDeviceID(this));
+        textView.setText("Device " + DeviceManager.instance.id);
 
-        int backgroundColor = Color.parseColor(DeviceManager.getDeviceColor(this));
+        int backgroundColor = Color.parseColor(DeviceManager.instance.color);
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
-
-        // Configure Server Connection
-        ServerConnection connection = ServerConnection.instance;
-        connection.deviceID = DeviceManager.getDeviceID(this);
-        //connection.sendLocation(1, 1, 1);
 
         // Start Demo
         // new AccelerometerDemo(this);
