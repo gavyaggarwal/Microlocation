@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Start BLE advertising
         DeviceAdActivity BLEAd = new DeviceAdActivity();
-        BLEAd.beginAdvertising();
+        BLEAd.beginLocationListening(MainActivity.this);
         
         // Start BLE scans
         DeviceScanActivity BLEScan = new DeviceScanActivity();

@@ -1,13 +1,20 @@
 package com.example.redcross.app;
 
+import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanCallback;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Bundle;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
@@ -29,26 +36,62 @@ public class InfoManager {
 
     private DeviceManager devInfo = new DeviceManager();
 
-    public String deviceLocation(Context c) {
+    public String deviceLocation(Activity c, final DeviceAdActivity a) {
 
-        double lat = 0;
-        double lon = 0;
-        String id = Settings.Secure.getString(c.getContentResolver(), Settings.Secure.ANDROID_ID);
-
-        c.getSystemService(Context.LOCATION_SERVICE);
-
-        LocationManager lmanage = (LocationManager) c.getSystemService(Context.LOCATION_SERVICE);
-        try {
-            Location myLocation = lmanage.getLastKnownLocation("");
-            Log.d("LOC_DEB", "" + myLocation.getLatitude());
-            Log.d("LOC_DEB", "" + myLocation.getLongitude());
-            lat = myLocation.getLatitude();
-            lon = myLocation.getLongitude();
-        } catch (SecurityException e) {
-            Log.d("UH_OH", "SPAGHETTIO");
+        // Check permissions
+        if(ContextCompat.checkSelfPermission(c, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(c,
+                    new String[] {Manifest.permission.ACCESS_COARSE_LOCATION},
+                    1111);
+            Log.d("BEEP", "Request access");
+        }
+        if(ContextCompat.checkSelfPermission(c, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(c,
+                    new String[] {Manifest.permission.ACCESS_FINE_LOCATION},
+                    1111);
+            Log.d("BOOP", "Request access");
         }
 
-        return "L:" + id + ", " + lat + ", " + lon;
+        // I don't think this line does anything, but why break it now?
+        c.getSystemService(Context.LOCATION_SERVICE);
+
+        // We need an ID for something
+        final String id = Settings.Secure.getString(c.getContentResolver(), Settings.Secure.ANDROID_ID);
+
+        // Register the listener with the Location Manager to receive location updates
+        LocationManager lmanage = (LocationManager) c.getSystemService(Context.LOCATION_SERVICE);
+
+        // Define a listener that responds to location updates
+        LocationListener locationListener = new LocationListener() {
+            public void onLocationChanged(Location myLocation) {
+                double lat = 0;
+                double lon = 0;
+
+                try {
+                    Log.d("LOC_DEB", "" + myLocation.getLatitude());
+                    Log.d("LOC_DEB", "" + myLocation.getLongitude());
+                    lat = myLocation.getLatitude();
+                    lon = myLocation.getLongitude();
+                } catch (SecurityException e) {
+                    Log.d("UH_OH", e.getMessage());
+                }
+
+                a.beginAdvertising("L:" + id + ", " + lat + ", " + lon);
+            }
+
+            public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+            public void onProviderEnabled(String provider) {}
+
+            public void onProviderDisabled(String provider) {}
+        };
+
+        lmanage.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+        lmanage.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        lmanage.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, locationListener);
+        return "";
     }
 
     public void encodingData(String data) {

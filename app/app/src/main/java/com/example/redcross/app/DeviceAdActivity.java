@@ -1,12 +1,14 @@
 package com.example.redcross.app;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
+import android.content.Context;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.provider.Settings;
@@ -31,15 +33,22 @@ public class DeviceAdActivity extends ListActivity {
     private AdvertiseData adScanResponse;
     private boolean isAdvertising = false;
 
-    public void beginAdvertising() {
+    public void beginLocationListening(Activity c) {
+        Log.d( "LOC_DEB", "Start listening");
+
+        InfoManager testData = new InfoManager();
+        testData.deviceLocation(c, this);
+    }
+
+    public void beginAdvertising(String message) {
         Log.d( "BLE AD", "Advertising gets called ");
 
         //String   ble_uuid = Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
         String ble_uuid = UUID.randomUUID().toString();
         ParcelUuid pUuid = new ParcelUuid(UUID.fromString(ble_uuid));
 
-        InfoManager testData = new InfoManager();
-        String locData = testData.deviceLocation(this);
+//        InfoManager testData = new InfoManager();
+//        String locData = testData.deviceLocation(c);
 
         Log.d("par id", pUuid.toString());
         Log.d( "BLE AD", "Advertising uuid set up ");
@@ -53,7 +62,7 @@ public class DeviceAdActivity extends ListActivity {
                 .setIncludeDeviceName(true)
                 .setIncludeTxPowerLevel(true)
                 .addServiceUuid( pUuid )
-                .addServiceData( pUuid, locData.getBytes(Charset.forName("UTF-8")))
+                .addServiceData( pUuid, message.getBytes(Charset.forName("UTF-8")))
                 .build();
         Log.d( "BLE AD", "Advertising setup Success ");
 
