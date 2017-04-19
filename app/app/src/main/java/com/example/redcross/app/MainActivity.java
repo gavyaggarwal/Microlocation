@@ -1,7 +1,6 @@
 package com.example.redcross.app;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -41,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
 
         // Start Demo
-        // new AccelerometerDemo(this);
+        new TrilaterationDemo(this);
 
         // Request necessary permissions
         requestPermissions();
