@@ -27,4 +27,18 @@ public class TrilaterationUnitTest {
         assertEquals(0, centroid[1], DELTA);
         assertEquals(0, centroid[2], DELTA);
     }
+
+    @Test
+    public void three_point_trilateration() throws Exception {
+        double[][] positions = { {0, 0, 1}, {0, 1, 0}, {1, 0, 0} };
+        double[] distances = { 1, 1, 1 };
+
+        NonLinearLeastSquaresSolver solver = new NonLinearLeastSquaresSolver(new TrilaterationFunction(positions, distances), new LevenbergMarquardtOptimizer());
+        LeastSquaresOptimizer.Optimum optimum = solver.solve();
+
+        double[] centroid = optimum.getPoint().toArray();
+        assertEquals(0, centroid[0], DELTA);
+        assertEquals(0, centroid[1], DELTA);
+        assertEquals(0, centroid[2], DELTA);
+    }
 }
