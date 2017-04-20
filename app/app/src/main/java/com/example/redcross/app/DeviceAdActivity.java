@@ -18,7 +18,6 @@ import com.example.redcross.app.utils.DeviceManager;
 
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.UUID;
 
 import cz.msebera.android.httpclient.entity.ByteArrayEntity;

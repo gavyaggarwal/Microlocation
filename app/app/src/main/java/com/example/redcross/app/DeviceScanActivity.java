@@ -12,9 +12,17 @@ import android.os.Handler;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.os.ParcelUuid;
 import android.util.Log;
+import android.util.Pair;
 
+import com.example.redcross.app.utils.DeviceManager;
+
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Activity for scanning and displaying available BLE devices.
@@ -28,8 +36,10 @@ public class DeviceScanActivity extends ListActivity {
     private List<ScanFilter> scanFilters = new ArrayList<ScanFilter>();
     private ScanSettings scanSettings;
     private boolean isScanning = false;
+    private Map<Character, Pair<float[], Date>> devices = new HashMap<>();
 
     private static final byte APP_ID = (byte) 197;
+    private static final int SCAN_AGE_LIMIT = 20; // in seconds
 
     public void beginScanning() {
         ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
@@ -74,9 +84,7 @@ public class DeviceScanActivity extends ListActivity {
                 String address = device.getAddress();
                 byte b[] = result.getScanRecord().getServiceData().values().iterator().next();
                 if (b.length == 15 && b[0] == APP_ID) {
-                    char id = (char) b[2];
-
-                    Log.d("Found Device", "{Device: " + address + ", RSSI Strength: " + RSSI + ", ID: " + id +"}" );
+                    parseMessage(b, (float) RSSI);
                 }
             } catch (Exception e) {
             }
@@ -91,5 +99,34 @@ public class DeviceScanActivity extends ListActivity {
             // a scan error occurred
         }
     };
+
+    private void parseMessage(byte[] m, float rssi) {
+        Character id = Character.valueOf((char) m[2]);
+        //Log.d("Found Device", "{Device: " + id.toString() + ", RSSI Strength: " + rssi + "}" );
+        byte[] x = {m[3], m[4], m[5], m[6]};
+        byte[] y = {m[7], m[8], m[9], m[10]};
+        byte[] z = {m[11], m[12], m[13], m[14]};
+        float[] values = new float[4];
+        values[0] = ByteBuffer.wrap(x).getFloat();
+        values[1] = ByteBuffer.wrap(y).getFloat();
+        values[2] = ByteBuffer.wrap(z).getFloat();
+        values[3] = rssi;
+        devices.put(id, new Pair<float[], Date>(values, new Date()));
+    }
+
+    public ArrayList<float[]> getNearbyDevices() {
+        Date now = new Date();
+        ArrayList<float[]> values = new ArrayList<>();
+        Iterator<Map.Entry<Character, Pair<float[], Date>>> iter = devices.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry<Character, Pair<float[], Date>> entry = iter.next();
+            if ((now.getTime() - entry.getValue().second.getTime()) / 1000 < SCAN_AGE_LIMIT) {
+                values.add(entry.getValue().first);
+            } else {
+                iter.remove();
+            }
+        }
+        return values;
+    }
 
 }
