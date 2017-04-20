@@ -36,7 +36,7 @@ public class DeviceManager {
                 color = "#4BC0C0";
                 initialLocation = new int[]{0, 0, 1};
                 break;
-            case "<ADD ID HERE>":
+            case "756736212b3e81e6":
                 id = "E";
                 color = "#9866FF";
                 initialLocation = new int[]{0, 0, 0};
