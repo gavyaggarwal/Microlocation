@@ -21,9 +21,7 @@ import java.nio.ByteBuffer;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
-    private DeviceScanActivity BLEScan;
 
-    private Handler mHandler;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,33 +38,12 @@ public class MainActivity extends AppCompatActivity {
         int backgroundColor = Color.parseColor(DeviceManager.instance.color);
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
 
-        // Start Demo
-        new TrilaterationDemo(this);
-
         // Request necessary permissions
         requestPermissions();
 
-        // Start BLE advertising
-        DeviceAdActivity BLEAd = new DeviceAdActivity();
-
-        // Start BLE scans
-        BLEScan = new DeviceScanActivity();
-        BLEScan.beginScanning();
-
-        mHandler = new Handler();
-        mStatusChecker.run();
+        // Start Demo
+        new TrilaterationDemo(this);
     }
-
-    Runnable mStatusChecker = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                Log.d("TEST", BLEScan.getNearbyDevices().toString());
-            } finally {
-                mHandler.postDelayed(mStatusChecker, 100);
-            }
-        }
-    };
 
 
     public void requestPermissions() {
