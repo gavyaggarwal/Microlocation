@@ -5,7 +5,6 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
-import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -16,8 +15,6 @@ import android.widget.TextView;
 import com.example.redcross.app.demos.TrilaterationDemo;
 import com.example.redcross.app.utils.DeviceManager;
 import com.example.redcross.app.utils.ServerConnection;
-
-import java.nio.ByteBuffer;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
