@@ -41,7 +41,7 @@ public class DeviceAdActivity extends ListActivity {
     private static final byte APP_ID = (byte) 197;
 
     public DeviceAdActivity() {
-        beginAdvertising();
+        beginAdvertising(true);
     }
 
     private byte[] getMessage() {
