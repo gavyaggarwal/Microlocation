@@ -40,6 +40,7 @@ public class DeviceManager {
                 id = "E";
                 color = "#9866FF";
                 initialLocation = new int[]{0, 0, 0};
+                break;
             default:
                 Log.d("Microlocation", "Encountered New Device with ID: " + hardwareID);
                 id = hardwareID;
