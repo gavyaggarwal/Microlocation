@@ -42,7 +42,7 @@ public class DeviceScanActivity extends ListActivity {
     private List<Integer> RSSIvals = new ArrayList<>();
     private int txPower;
     private static final byte APP_ID = (byte) 197;
-    private static final int SCAN_AGE_LIMIT = 20; // in seconds
+    private static final int SCAN_AGE_LIMIT = 1; // in seconds
 
     public void beginScanning(boolean continuous) {
         ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
@@ -112,7 +112,7 @@ public class DeviceScanActivity extends ListActivity {
                 BluetoothDevice remDevice = result.getDevice();
                 ServerConnection.instance.sendDebug("RSSI Constant", RSSI);
                 String address = remDevice.getAddress();
-                Log.d("Found Device", "{Device: " + address + ", RSSI Strength: " + RSSI +"}" );
+                //Log.d("Found Device", "{Device: " + address + ", RSSI Strength: " + RSSI +"}" );
 
             } catch (Exception e) {
             }

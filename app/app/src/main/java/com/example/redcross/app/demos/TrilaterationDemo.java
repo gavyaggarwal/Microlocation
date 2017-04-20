@@ -12,6 +12,7 @@ import com.example.redcross.app.DeviceAdActivity;
 import com.example.redcross.app.DeviceScanActivity;
 import com.example.redcross.app.NonLinearLeastSquaresSolver;
 import com.example.redcross.app.TrilaterationFunction;
+import com.example.redcross.app.utils.DeviceManager;
 import com.example.redcross.app.utils.ServerConnection;
 
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class TrilaterationDemo {
 
         // Start BLE scanning
         BLEScan = new DeviceScanActivity();
-        BLEScan.beginScanning();
+        BLEScan.beginScanning(true);
 
         // Get nearby devices, locations, and RSSI values from Annie
         // Array of device id (A, B, C, D, E) and location (x, y, z) and rssi
@@ -49,30 +50,40 @@ public class TrilaterationDemo {
         @Override
         public void run() {
             try {
-                ArrayList<float[]> devices = BLEScan.getNearbyDevices();
-                double[][] positions = new double[devices.size()][2];
-                double[] distances = new double[devices.size()];
+                String testDevice = "C";
 
-                if (devices.size() > 2) {
-                    for (int i = 0; i < devices.size(); i++) {
-                        float[] data = devices.get(i);
-                        positions[i][0] = (double) data[0];
-                        positions[i][1] = (double) data[1];
+                if (DeviceManager.instance.id.equals(testDevice)) {
+                    ArrayList<float[]> devices = BLEScan.getNearbyDevices();
+                    double[][] positions = new double[devices.size()][3];
+                    double[] distances = new double[devices.size()];
 
-                        distances[i] = BLEScan.getDistance1((double) data[3]);
+                    if (devices.size() >= 2) {
+                        for (int i = 0; i < devices.size(); i++) {
+                            float[] data = devices.get(i);
+                            positions[i][0] = (double) data[0];
+                            positions[i][1] = (double) data[1];
+                            positions[i][2] = (double) data[2];
+
+                            distances[i] = BLEScan.getDistance1((double) data[3]);
+
+                            Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
+                        }
+
+
+                        NonLinearLeastSquaresSolver solver = new NonLinearLeastSquaresSolver(new TrilaterationFunction(positions, distances), new LevenbergMarquardtOptimizer());
+                        Optimum optimum = solver.solve();
+
+                        // the answer
+                        double[] centroid = optimum.getPoint().toArray();
+                        Log.d("TEST1", String.valueOf(centroid.length));
+                        Log.d("TEST2", String.valueOf(centroid[0]) + " " + String.valueOf(centroid[1]) + " " + String.valueOf(centroid[2]));
+
+
+                        // Send data to server
+                        ServerConnection.instance.sendLocation((float) centroid[0], (float) centroid[1], (float) centroid[2]);
                     }
-
-
-                    NonLinearLeastSquaresSolver solver = new NonLinearLeastSquaresSolver(new TrilaterationFunction(positions, distances), new LevenbergMarquardtOptimizer());
-                    Optimum optimum = solver.solve();
-
-                    // the answer
-                    double[] centroid = optimum.getPoint().toArray();
-                    Log.d("TEST1", String.valueOf(centroid.length));
-
-
-                    // Send data to server
-                    ServerConnection.instance.sendLocation((float) centroid[0], (float) centroid[1], (float) centroid[2]);
+                } else {
+                    ServerConnection.instance.sendLocation(DeviceManager.instance.x, DeviceManager.instance.y, DeviceManager.instance.z);
                 }
 
             } finally {
