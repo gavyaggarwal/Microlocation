@@ -63,7 +63,6 @@ public class DeviceAdActivity extends ListActivity {
         Log.d("par id", pUuid.toString());
         Log.d( "BLE AD", "Advertising uuid set up ");
         adSettings = new AdvertiseSettings.Builder()
-                .setAdvertiseMode( AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY )
                 .setTxPowerLevel( AdvertiseSettings.ADVERTISE_TX_POWER_HIGH )
                 .setConnectable( false )
                 .build();
@@ -74,7 +73,6 @@ public class DeviceAdActivity extends ListActivity {
                 //.addServiceUuid( pUuid )
                 .addServiceData( pUuid, message )
                 .build();
-        Log.d( "BLE AD", "Advertising setup Success ");
 
         adHandler.post(adRunnable);
     }

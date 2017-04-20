@@ -15,9 +15,11 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.example.redcross.app.utils.DeviceManager;
+import com.example.redcross.app.utils.ServerConnection;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -30,14 +32,15 @@ import java.util.Map;
 
 @TargetApi(21)
 public class DeviceScanActivity extends ListActivity {
-    private static final int SCAN_INTERVAL_MS = 10000;
+    private static final int SCAN_INTERVAL_MS = 3000;
 
     private Handler scanHandler = new Handler();
     private List<ScanFilter> scanFilters = new ArrayList<ScanFilter>();
     private ScanSettings scanSettings;
     private boolean isScanning = false;
     private Map<Character, Pair<float[], Date>> devices = new HashMap<>();
-
+    private List<Integer> RSSIvals;
+    private int txPower;
     private static final byte APP_ID = (byte) 197;
     private static final int SCAN_AGE_LIMIT = 20; // in seconds
 
@@ -61,11 +64,20 @@ public class DeviceScanActivity extends ListActivity {
 
             if (isScanning) {
                 scanner.stopScan(scanCallback);
-                Log.d("BLE Scan", "Ended");
+                Log.d("BLEScan", "TxPower:" + String.valueOf(txPower));
+                Log.d("BLEScan", "Average of vals:" + String.valueOf(getAverage(RSSIvals)));
+                Collections.sort(RSSIvals);
+                stripOutliers();
+                double avgRSSI = getAverage(RSSIvals);
+                ServerConnection.instance.sendDebug("RSSI Avg. Value", (float) avgRSSI);
+                Log.d("BLEScan", "Average of middle 80%:" + String.valueOf(avgRSSI));
+                Log.d("BLEScan", "Distance Prediction 1:" + String.valueOf(getDistance1(avgRSSI)));
+                Log.d("BLEScan", "Distance Prediction 2:" + String.valueOf(getDistance2(avgRSSI)));
+                Log.d("BLEScan", "Ended");
+                RSSIvals.clear();
             } else {
                 scanner.startScan(scanFilters, scanSettings, scanCallback);
-//                scanner.startScan(scanCallback);
-                Log.d("BLE Scan", "In Progress");
+                Log.d("BLEScan", "In Progress");
             }
 
             isScanning = !isScanning;
@@ -78,18 +90,24 @@ public class DeviceScanActivity extends ListActivity {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
+
+
             try {
-                BluetoothDevice device = result.getDevice();
                 int RSSI = result.getRssi();
-                String address = device.getAddress();
                 byte b[] = result.getScanRecord().getServiceData().values().iterator().next();
                 if (b.length == 15 && b[0] == APP_ID) {
                     parseMessage(b, (float) RSSI);
                 }
+
+                RSSIvals.add(RSSI);
+                txPower = result.getScanRecord().getTxPowerLevel();
+                BluetoothDevice remDevice = result.getDevice();
+                ServerConnection.instance.sendDebug("RSSI Constant", RSSI);
+                String address = remDevice.getAddress();
+                Log.d("Found Device", "{Device: " + address + ", RSSI Strength: " + RSSI +"}" );
+                
             } catch (Exception e) {
             }
-
-            // do something with RSSI value
         }
 
         @Override
@@ -98,6 +116,53 @@ public class DeviceScanActivity extends ListActivity {
 
             // a scan error occurred
         }
+    };
+
+    private double getAverage(List<Integer> nums) {
+        double sum = 0;
+        if(!nums.isEmpty()) {
+            for (Integer num : nums) {
+                sum += num;
+            }
+            return sum / nums.size();
+        }
+        return sum;
+    };
+
+    private void stripOutliers() {
+        int cutoff = RSSIvals.size() / 10;
+        while (cutoff > 0) {
+            RSSIvals.remove(0);
+            RSSIvals.remove(RSSIvals.size()-1);
+            cutoff--;
+        }
+    }
+
+    private double getDistance1(double rssi) {
+        if (rssi == 0) {
+            return -1.0; // if we cannot determine accuracy, return -1.
+        }
+
+        double ratio = rssi*1.0/txPower;
+        if (ratio < 1.0) {
+            return Math.pow(ratio,10);
+        }
+        else {
+            double accuracy =  (0.89976)*Math.pow(ratio,7.7095) + 0.111;
+            return accuracy;
+        }
+    };
+
+    private double getDistance2(double rssi) {
+        /*
+        * RSSI = TxPower - 10 * n * lg(d)
+        * n = 2 (in free space)
+        *
+        * d = 10 ^ ((TxPower - RSSI) / (10 * n))
+        */
+
+        return Math.pow(10d, ((double) txPower - rssi) / (10 * 2));
+
     };
 
     private void parseMessage(byte[] m, float rssi) {
