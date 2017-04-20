@@ -12,13 +12,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
+import com.example.redcross.app.demos.TrilaterationDemo;
+import com.example.redcross.app.utils.DeviceManager;
+import com.example.redcross.app.utils.ServerConnection;
 
-import com.loopj.android.http.PersistentCookieStore;
-
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
@@ -47,8 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Start BLE advertising
         DeviceAdActivity BLEAd = new DeviceAdActivity();
-        BLEAd.beginLocationListening(MainActivity.this);
-        
+
         // Start BLE scans
         DeviceScanActivity BLEScan = new DeviceScanActivity();
         BLEScan.beginScanning();

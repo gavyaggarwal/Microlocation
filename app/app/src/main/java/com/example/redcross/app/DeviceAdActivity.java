@@ -14,6 +14,8 @@ import android.os.ParcelUuid;
 import android.provider.Settings;
 import android.util.Log;
 
+import com.example.redcross.app.utils.DeviceManager;
+
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -35,25 +37,29 @@ public class DeviceAdActivity extends ListActivity {
     private Handler adHandler = new Handler();
     private AdvertiseSettings adSettings;
     private AdvertiseData adData;
-    private AdvertiseData adScanResponse;
     private boolean isAdvertising = false;
 
-    public void beginLocationListening(Activity c) {
-        Log.d( "LOC_DEB", "Start listening");
+    private static final byte APP_ID = (byte) 197;
 
-        InfoManager testData = new InfoManager();
-        testData.deviceLocation(c, this);
+    public DeviceAdActivity() {
+        beginAdvertising();
     }
 
-    public void beginAdvertising(Float message) {
+    private byte[] getMessage() {
+        byte tag = 0;
+        byte id = (byte) DeviceManager.instance.id.charAt(0);
+        byte[] x = ByteBuffer.allocate(4).putFloat(DeviceManager.instance.x).array();
+        byte[] y = ByteBuffer.allocate(4).putFloat(DeviceManager.instance.y).array();
+        byte[] z = ByteBuffer.allocate(4).putFloat(DeviceManager.instance.z).array();
+        byte[] m = {APP_ID, tag, id, x[0], x[1], x[2], x[3], y[0], y[1], y[2], y[3], z[0], z[1], z[2], z[3]};
+        return m;
+    }
+
+    public void beginAdvertising() {
         Log.d( "BLE AD", "Advertising gets called ");
-        ByteBuffer.allocate(4).putFloat(message).array();
-        byte[] byteMess = new byte[4];
+        byte[] message = getMessage();
 
         ParcelUuid pUuid = new ParcelUuid(UUID.fromString(DeviceManager.instance.id + "0000000-0000-0000-0000-000000000000"));
-
-//        InfoManager testData = new InfoManager();
-//        String locData = testData.deviceLocation(c);
 
         Log.d("par id", pUuid.toString());
         Log.d( "BLE AD", "Advertising uuid set up ");
@@ -64,9 +70,10 @@ public class DeviceAdActivity extends ListActivity {
                 .build();
 
         adData = new AdvertiseData.Builder()
-                .setIncludeTxPowerLevel(true)
-                .addServiceUuid( pUuid )
-                .addServiceData( pUuid, byteMess)
+                .setIncludeDeviceName( false )
+                .setIncludeTxPowerLevel(false)
+                //.addServiceUuid( pUuid )
+                .addServiceData( pUuid, message )
                 .build();
         Log.d( "BLE AD", "Advertising setup Success ");
 
@@ -83,7 +90,7 @@ public class DeviceAdActivity extends ListActivity {
                 Log.d("BLE Ad", "Ended");
             } else {
 //                scanner.startScan(scanFilters, scanSettings, scanCallback);
-                advertiser.startAdvertising(adSettings, adData, adScanResponse, adCallback);
+                advertiser.startAdvertising(adSettings, adData, adCallback);
                 Log.d("BLE Ad", "In Progress");
             }
 

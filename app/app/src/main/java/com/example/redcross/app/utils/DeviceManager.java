@@ -12,40 +12,54 @@ public class DeviceManager {
     public static DeviceManager instance = new DeviceManager();
     public String id;
     public String color;
-    public int[] initialLocation;
+    public float x;
+    public float y;
+    public float z;
     public void setContext(Context context) {
         String hardwareID = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
         switch (hardwareID) {
             case "ccf6cfbb8ceac04d":
                 id = "A";
                 color = "#FF6384";
-                initialLocation = new int[]{-1, 0, 0};
+                x = -1;
+                y = 0;
+                z = 0;
                 break;
             case "3203ace7c9325f23":
                 id = "B";
                 color = "#36A2EB";
-                initialLocation = new int[]{0, 0, -1};
+                x = 0;
+                y = 0;
+                z = -1;
                 break;
             case "720d0aad5060d35f":
                 id = "C";
                 color = "#FFCE56";
-                initialLocation = new int[]{1, 0, 0};
+                x = 1;
+                y = 0;
+                z = 0;
                 break;
             case "cb7458c492fc64a9":
                 id = "D";
                 color = "#4BC0C0";
-                initialLocation = new int[]{0, 0, 1};
+                x = 0;
+                y = 0;
+                z = 1;
                 break;
             case "756736212b3e81e6":
                 id = "E";
                 color = "#9866FF";
-                initialLocation = new int[]{0, 0, 0};
+                x = 0;
+                y = 0;
+                z = 0;
                 break;
             default:
                 Log.d("Microlocation", "Encountered New Device with ID: " + hardwareID);
                 id = hardwareID;
                 color = "#666666";
-                initialLocation = new int[]{0, 0, 0};
+                x = 0;
+                y = 0;
+                z = 0;
                 break;
         }
     }

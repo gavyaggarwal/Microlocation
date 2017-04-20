@@ -34,8 +34,6 @@ import static android.content.ContentValues.TAG;
 
 public class InfoManager {
 
-    private DeviceManager devInfo = new DeviceManager();
-
     public String deviceLocation(Activity c, final DeviceAdActivity a) {
 
         // Check permissions
@@ -78,7 +76,7 @@ public class InfoManager {
                     Log.d("UH_OH", e.getMessage());
                 }
 
-                a.beginAdvertising((float)lat);
+                //a.beginAdvertising((float)lat);
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {}
