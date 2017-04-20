@@ -32,27 +32,21 @@ public class DeviceAdActivity extends ListActivity {
     private boolean isAdvertising = false;
 
     public void beginAdvertising() {
-        Log.d( "BLE AD", "Advertising gets called ");
-
         //String   ble_uuid = Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
-        String ble_uuid = UUID.randomUUID().toString();
-        ParcelUuid pUuid = new ParcelUuid(UUID.fromString(ble_uuid));
-        Log.d("par id", pUuid.toString());
-        Log.d( "BLE AD", "Advertising uuid set up ");
+        ParcelUuid pUuid = new ParcelUuid(UUID.fromString(DeviceManager.instance.id + "0000000-0000-0000-0000-000000000000"));
+
         adSettings = new AdvertiseSettings.Builder()
-                .setAdvertiseMode( AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY )
                 .setTxPowerLevel( AdvertiseSettings.ADVERTISE_TX_POWER_HIGH )
                 .setConnectable( false )
                 .build();
 
         adData = new AdvertiseData.Builder()
-                .setIncludeDeviceName(true)
                 .setIncludeTxPowerLevel(true)
                 .addServiceUuid( pUuid )
-                .addServiceData( pUuid, ":)".getBytes(Charset.forName("UTF-8")))
+                .addServiceData( pUuid, "Data".getBytes(Charset.forName("UTF-8")))
                 .build();
-        Log.d( "BLE AD", "Advertising setup Success ");
-
+        Log.d("BLEAD", String.valueOf(("Data".getBytes(Charset.forName("UTF-8")).length)));
+        Log.d("BLEAD", String.valueOf(byteArrayToHexString(adData.getServiceData().get(pUuid))));
         adHandler.post(adRunnable);
     }
 
@@ -87,6 +81,15 @@ public class DeviceAdActivity extends ListActivity {
             super.onStartFailure(errorCode);
             Log.d( "BLE AD", "Advertising onStartFailure: " + errorCode );
         };
+    };
+
+
+    public static String byteArrayToHexString(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bytes.length; i++) {
+            sb.append(String.format("%02x", bytes[i]));
+        }
+        return sb.toString();
     };
 
 }
