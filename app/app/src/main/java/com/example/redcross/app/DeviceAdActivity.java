@@ -54,7 +54,7 @@ public class DeviceAdActivity extends ListActivity {
         return m;
     }
 
-    public void beginAdvertising() {
+    public void beginAdvertising(boolean continuous) {
         Log.d( "BLE AD", "Advertising gets called ");
         byte[] message = getMessage();
 
@@ -74,7 +74,15 @@ public class DeviceAdActivity extends ListActivity {
                 .addServiceData( pUuid, message )
                 .build();
 
-        adHandler.post(adRunnable);
+        if (continuous) {
+            BluetoothLeAdvertiser advertiser = BluetoothAdapter.getDefaultAdapter(). getBluetoothLeAdvertiser() ;
+            advertiser.startAdvertising(adSettings, adData, adCallback);
+            Log.d("BLE Ad", "In Progress");
+        }
+        else {
+            adHandler.post(adRunnable);
+        }
+
     }
 
     private Runnable adRunnable = new Runnable() {

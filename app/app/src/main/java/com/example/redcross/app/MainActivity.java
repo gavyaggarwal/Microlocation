@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Start BLE scans
         BLEScan = new DeviceScanActivity();
-        BLEScan.beginScanning();
+        BLEScan.beginScanning(true);
 
         mHandler = new Handler();
         mStatusChecker.run();

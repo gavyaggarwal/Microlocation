@@ -44,7 +44,7 @@ public class DeviceScanActivity extends ListActivity {
     private static final byte APP_ID = (byte) 197;
     private static final int SCAN_AGE_LIMIT = 20; // in seconds
 
-    public void beginScanning() {
+    public void beginScanning(boolean continuous) {
         ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
         scanSettingsBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
         scanSettings = scanSettingsBuilder.build();
@@ -54,7 +54,15 @@ public class DeviceScanActivity extends ListActivity {
                 ParcelUuid.fromString("01111111-1111-1111-1111-111111111111"));
         //scanFilters.add(scanFiltersBuilder.build());
 
-        scanHandler.post(scanRunnable);
+        if (continuous) {
+            BluetoothLeScanner scanner = BluetoothAdapter.getDefaultAdapter().getBluetoothLeScanner();
+            scanner.startScan(scanFilters, scanSettings, scanCallback);
+            Log.d("BLEScan", "In Progress");
+        }
+        else {
+            scanHandler.post(scanRunnable);
+        }
+
     }
 
     private Runnable scanRunnable = new Runnable() {
@@ -105,7 +113,7 @@ public class DeviceScanActivity extends ListActivity {
                 ServerConnection.instance.sendDebug("RSSI Constant", RSSI);
                 String address = remDevice.getAddress();
                 Log.d("Found Device", "{Device: " + address + ", RSSI Strength: " + RSSI +"}" );
-                
+
             } catch (Exception e) {
             }
         }
