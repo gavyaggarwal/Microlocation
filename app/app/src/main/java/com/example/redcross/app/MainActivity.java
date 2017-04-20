@@ -1,11 +1,11 @@
 package com.example.redcross.app;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
+import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -13,17 +13,17 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
+import com.example.redcross.app.demos.TrilaterationDemo;
+import com.example.redcross.app.utils.DeviceManager;
+import com.example.redcross.app.utils.ServerConnection;
 
-import com.loopj.android.http.PersistentCookieStore;
-
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
+    private DeviceScanActivity BLEScan;
 
+    private Handler mHandler;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,19 +41,32 @@ public class MainActivity extends AppCompatActivity {
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
 
         // Start Demo
-        // new AccelerometerDemo(this);
+        new TrilaterationDemo(this);
 
         // Request necessary permissions
         requestPermissions();
 
         // Start BLE advertising
         DeviceAdActivity BLEAd = new DeviceAdActivity();
-        BLEAd.beginAdvertising();
-        
+
         // Start BLE scans
-        DeviceScanActivity BLEScan = new DeviceScanActivity();
+        BLEScan = new DeviceScanActivity();
         BLEScan.beginScanning();
+
+        mHandler = new Handler();
+        mStatusChecker.run();
     }
+
+    Runnable mStatusChecker = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                Log.d("TEST", BLEScan.getNearbyDevices().toString());
+            } finally {
+                mHandler.postDelayed(mStatusChecker, 100);
+            }
+        }
+    };
 
 
     public void requestPermissions() {
