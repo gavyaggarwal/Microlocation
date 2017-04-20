@@ -15,16 +15,14 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.example.redcross.app.utils.DeviceManager;
+import com.example.redcross.app.utils.ServerConnection;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-<<<<<<< HEAD
 import java.util.Collections;
-=======
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
->>>>>>> fe2e29859895a3b9dea65ef38d07603332343af6
 import java.util.List;
 import java.util.Map;
 
@@ -40,15 +38,11 @@ public class DeviceScanActivity extends ListActivity {
     private List<ScanFilter> scanFilters = new ArrayList<ScanFilter>();
     private ScanSettings scanSettings;
     private boolean isScanning = false;
-<<<<<<< HEAD
-    private List<Integer> RSSIvals = new ArrayList<>();
-    private int txPower;
-=======
     private Map<Character, Pair<float[], Date>> devices = new HashMap<>();
-
+    private List<Integer> RSSIvals;
+    private int txPower;
     private static final byte APP_ID = (byte) 197;
     private static final int SCAN_AGE_LIMIT = 20; // in seconds
->>>>>>> fe2e29859895a3b9dea65ef38d07603332343af6
 
     public void beginScanning() {
         ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
@@ -56,15 +50,9 @@ public class DeviceScanActivity extends ListActivity {
         scanSettings = scanSettingsBuilder.build();
 
         ScanFilter.Builder scanFiltersBuilder = new ScanFilter.Builder();
-<<<<<<< HEAD
-        scanFiltersBuilder.setServiceUuid(ParcelUuid.fromString("a0000000-0000-0000-0000-000000000000"),
-                ParcelUuid.fromString("01111111-1111-1111-1111-111111111111"));
-        scanFilters.add(scanFiltersBuilder.build());
-=======
         scanFiltersBuilder.setServiceUuid(ParcelUuid.fromString("c0000000-0000-0000-0000-000000000000"),
                 ParcelUuid.fromString("01111111-1111-1111-1111-111111111111"));
         //scanFilters.add(scanFiltersBuilder.build());
->>>>>>> fe2e29859895a3b9dea65ef38d07603332343af6
 
         scanHandler.post(scanRunnable);
     }
@@ -102,29 +90,24 @@ public class DeviceScanActivity extends ListActivity {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
-<<<<<<< HEAD
 
-            int RSSI = result.getRssi();
-            RSSIvals.add(RSSI);
-            txPower = result.getScanRecord().getTxPowerLevel();
-            BluetoothDevice remDevice = result.getDevice();
-            ServerConnection.instance.sendDebug("RSSI Constant", RSSI);
-            String address = remDevice.getAddress();
-            Log.d("Found Device", "{Device: " + address + ", RSSI Strength: " + RSSI +"}" );
-=======
+
             try {
-                BluetoothDevice device = result.getDevice();
                 int RSSI = result.getRssi();
-                String address = device.getAddress();
                 byte b[] = result.getScanRecord().getServiceData().values().iterator().next();
                 if (b.length == 15 && b[0] == APP_ID) {
                     parseMessage(b, (float) RSSI);
                 }
+
+                RSSIvals.add(RSSI);
+                txPower = result.getScanRecord().getTxPowerLevel();
+                BluetoothDevice remDevice = result.getDevice();
+                ServerConnection.instance.sendDebug("RSSI Constant", RSSI);
+                String address = remDevice.getAddress();
+                Log.d("Found Device", "{Device: " + address + ", RSSI Strength: " + RSSI +"}" );
+                
             } catch (Exception e) {
             }
->>>>>>> fe2e29859895a3b9dea65ef38d07603332343af6
-
-            // do something with RSSI value
         }
 
         @Override
@@ -135,7 +118,6 @@ public class DeviceScanActivity extends ListActivity {
         }
     };
 
-<<<<<<< HEAD
     private double getAverage(List<Integer> nums) {
         double sum = 0;
         if(!nums.isEmpty()) {
@@ -182,7 +164,7 @@ public class DeviceScanActivity extends ListActivity {
         return Math.pow(10d, ((double) txPower - rssi) / (10 * 2));
 
     };
-=======
+
     private void parseMessage(byte[] m, float rssi) {
         Character id = Character.valueOf((char) m[2]);
         //Log.d("Found Device", "{Device: " + id.toString() + ", RSSI Strength: " + rssi + "}" );
@@ -212,5 +194,4 @@ public class DeviceScanActivity extends ListActivity {
         return values;
     }
 
->>>>>>> fe2e29859895a3b9dea65ef38d07603332343af6
 }
