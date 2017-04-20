@@ -39,7 +39,7 @@ public class DeviceScanActivity extends ListActivity {
     private ScanSettings scanSettings;
     private boolean isScanning = false;
     private Map<Character, Pair<float[], Date>> devices = new HashMap<>();
-    private List<Integer> RSSIvals;
+    private List<Integer> RSSIvals = new ArrayList<>();
     private int txPower;
     private static final byte APP_ID = (byte) 197;
     private static final int SCAN_AGE_LIMIT = 20; // in seconds
@@ -141,12 +141,12 @@ public class DeviceScanActivity extends ListActivity {
         int cutoff = RSSIvals.size() / 10;
         while (cutoff > 0) {
             RSSIvals.remove(0);
-            RSSIvals.remove(RSSIvals.size()-1);
+            RSSIvals.remove(RSSIvals.size() - 1);
             cutoff--;
         }
     }
 
-    private double getDistance1(double rssi) {
+    public double getDistance1(double rssi) {
         if (rssi == 0) {
             return -1.0; // if we cannot determine accuracy, return -1.
         }
