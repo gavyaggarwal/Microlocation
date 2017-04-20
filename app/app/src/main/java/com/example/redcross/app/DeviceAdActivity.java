@@ -14,9 +14,14 @@ import android.os.ParcelUuid;
 import android.provider.Settings;
 import android.util.Log;
 
+import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
+import cz.msebera.android.httpclient.entity.ByteArrayEntity;
+
+import static android.R.attr.value;
 import static java.security.AccessController.getContext;
 
 /**
@@ -40,12 +45,12 @@ public class DeviceAdActivity extends ListActivity {
         testData.deviceLocation(c, this);
     }
 
-    public void beginAdvertising(String message) {
+    public void beginAdvertising(Float message) {
         Log.d( "BLE AD", "Advertising gets called ");
+        ByteBuffer.allocate(4).putFloat(message).array();
+        byte[] byteMess = new byte[4];
 
-        //String   ble_uuid = Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
-        String ble_uuid = UUID.randomUUID().toString();
-        ParcelUuid pUuid = new ParcelUuid(UUID.fromString(ble_uuid));
+        ParcelUuid pUuid = new ParcelUuid(UUID.fromString(DeviceManager.instance.id + "0000000-0000-0000-0000-000000000000"));
 
 //        InfoManager testData = new InfoManager();
 //        String locData = testData.deviceLocation(c);
@@ -59,10 +64,9 @@ public class DeviceAdActivity extends ListActivity {
                 .build();
 
         adData = new AdvertiseData.Builder()
-                .setIncludeDeviceName(true)
                 .setIncludeTxPowerLevel(true)
                 .addServiceUuid( pUuid )
-                .addServiceData( pUuid, message.getBytes(Charset.forName("UTF-8")))
+                .addServiceData( pUuid, byteMess)
                 .build();
         Log.d( "BLE AD", "Advertising setup Success ");
 

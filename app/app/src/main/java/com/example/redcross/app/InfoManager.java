@@ -78,7 +78,7 @@ public class InfoManager {
                     Log.d("UH_OH", e.getMessage());
                 }
 
-                a.beginAdvertising("L:" + id + ", " + lat + ", " + lon);
+                a.beginAdvertising((float)lat);
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {}

@@ -35,8 +35,8 @@ public class DeviceScanActivity extends ListActivity {
         scanSettings = scanSettingsBuilder.build();
 
         ScanFilter.Builder scanFiltersBuilder = new ScanFilter.Builder();
-        // scanFiltersBuilder.setDeviceAddress("F8:95:C7:06:81:F8");
-        scanFiltersBuilder.setServiceUuid(ParcelUuid.fromString("254a134e-d9fe-4952-bc0b-8b22f87d96d7"));
+        scanFiltersBuilder.setServiceUuid(ParcelUuid.fromString("a0000000-0000-0000-0000-000000000000"),
+                ParcelUuid.fromString("01111111-1111-1111-1111-111111111111"));
         scanFilters.add(scanFiltersBuilder.build());
 
         scanHandler.post(scanRunnable);
