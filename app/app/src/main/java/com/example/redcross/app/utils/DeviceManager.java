@@ -1,4 +1,4 @@
-package com.example.redcross.app;
+package com.example.redcross.app.utils;
 
 import android.content.Context;
 import android.provider.Settings.Secure;

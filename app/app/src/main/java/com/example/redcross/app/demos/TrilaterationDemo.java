@@ -1,4 +1,4 @@
-package com.example.redcross.app;
+package com.example.redcross.app.demos;
 
 import android.content.Context;
 
@@ -6,6 +6,9 @@ import org.apache.commons.math3.fitting.leastsquares.LeastSquaresOptimizer.Optim
 import org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer;
 
 import android.util.Log;
+
+import com.example.redcross.app.NonLinearLeastSquaresSolver;
+import com.example.redcross.app.TrilaterationFunction;
 
 /**
  * Created by gavya on 4/19/2017.
