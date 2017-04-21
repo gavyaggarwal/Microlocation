@@ -81,7 +81,7 @@ public class TrilaterationDemo {
         @Override
         public void run() {
             try {
-                String testDevice = "A";
+                String testDevice = "E";
 
                 if (DeviceManager.instance.id.equals(testDevice)) {
                     ArrayList<float[]> devices = BLEScan.getNearbyDevices();
