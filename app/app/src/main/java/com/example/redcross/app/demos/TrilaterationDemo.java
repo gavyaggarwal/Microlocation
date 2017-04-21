@@ -46,11 +46,42 @@ public class TrilaterationDemo {
 
     }
 
+    private double[] performTrilateration(double[][] positions, double[] distances) {
+        double x = 1e-7;
+        double y = 1e-7;
+        double z = 1e-7;
+
+        double eta = 0.01;
+        double confidence = 1.0;
+
+        for (int i = 0; i < 1000; i++) {
+            double error = 0;
+            double gradx = 0;
+            double grady = 0;
+            double gradz = 0;
+            for (int j = 0; j < positions.length; j++) {
+                double dx = x - positions[j][0];
+                double dy = y - positions[j][1];
+                double dz = z - positions[j][2];
+                double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                double distanceError = rad - distances[j];
+                gradx += 2 * confidence * distanceError / rad * dx;
+                grady += 2 * confidence * distanceError / rad * dy;
+                gradz += 2 * confidence * distanceError / rad * dz;
+                error += confidence * distanceError * distanceError;
+            }
+            x -= gradx * eta;
+            y -= grady * eta;
+            z -= gradz * eta;
+        }
+        return new double[]{x, y, z};
+    }
+
     Runnable mStatusChecker = new Runnable() {
         @Override
         public void run() {
             try {
-                String testDevice = "C";
+                String testDevice = "A";
 
                 if (DeviceManager.instance.id.equals(testDevice)) {
                     ArrayList<float[]> devices = BLEScan.getNearbyDevices();
@@ -66,17 +97,19 @@ public class TrilaterationDemo {
 
                             distances[i] = BLEScan.getDistance1((double) data[3]);
 
-                            Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
+                            //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
                         }
 
 
-                        NonLinearLeastSquaresSolver solver = new NonLinearLeastSquaresSolver(new TrilaterationFunction(positions, distances), new LevenbergMarquardtOptimizer());
-                        Optimum optimum = solver.solve();
+                        //NonLinearLeastSquaresSolver solver = new NonLinearLeastSquaresSolver(new TrilaterationFunction(positions, distances), new LevenbergMarquardtOptimizer());
+                        //Optimum optimum = solver.solve();
 
                         // the answer
-                        double[] centroid = optimum.getPoint().toArray();
-                        Log.d("TEST1", String.valueOf(centroid.length));
+                        //double[] centroid = optimum.getPoint().toArray();
+                        double[] centroid = performTrilateration(positions, distances);
+                        //Log.d("TEST1", String.valueOf(centroid.length));
                         Log.d("TEST2", String.valueOf(centroid[0]) + " " + String.valueOf(centroid[1]) + " " + String.valueOf(centroid[2]));
+                        Log.d("TEST1", String.valueOf(distances[0]) + " " + String.valueOf(distances[1]));
 
 
                         // Send data to server

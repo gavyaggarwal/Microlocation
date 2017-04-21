@@ -1,29 +1,20 @@
 package com.example.redcross.app;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
-import android.content.Context;
 import android.os.Handler;
 import android.os.ParcelUuid;
-import android.provider.Settings;
 import android.util.Log;
 
 import com.example.redcross.app.utils.DeviceManager;
 
-import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.util.UUID;
-
-import cz.msebera.android.httpclient.entity.ByteArrayEntity;
-
-import static android.R.attr.value;
-import static java.security.AccessController.getContext;
 
 /**
  * Activity for advertising to other BLE devices.
