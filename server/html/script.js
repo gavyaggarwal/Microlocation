@@ -41,9 +41,15 @@ function updateLocationCharts(locations) {
           height: '80vh',
           showShadow: true,
           verticalRatio: 0.5,
-          cameraPosition: {horizontal: 1.0, vertical: 0.5, distance: 2.0},
+          cameraPosition: {horizontal: 0, vertical: 1.57, distance: 2.0},
           style: 'dot-color',
-          showLegend: false
+          showLegend: false,
+          xMax: 2,
+          xMin: -2,
+          yMax: 2,
+          yMin: -2,
+          zMax: 2,
+          zMin: -2,
         };
 
         var container = document.getElementById('locations');
