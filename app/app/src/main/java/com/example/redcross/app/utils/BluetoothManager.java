@@ -13,9 +13,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.os.Build;
-import android.os.ParcelUuid;
 import android.util.Log;
-import android.util.Pair;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -23,26 +21,35 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.UUID;
 
 /**
- * Created by gavya on 4/14/2017.
+ * Created by gavya on 4/23/2017.
  */
 
 public class BluetoothManager {
     public static BluetoothManager instance = new BluetoothManager();
-    private Map<Character, Pair<float[], Date>> devices = new HashMap<>();
+    private Map<Character, Map<DataType, Object>> devices = new HashMap<>();
     private static final short APP_ID = 12124;
     private static final int SCAN_AGE_LIMIT = 1; // in seconds
-    private static final byte MESSAGE_SIZE = 13;
+    private static final byte MESSAGE_SIZE = 17;
     private BluetoothLeAdvertiser advertiser;
     private BluetoothLeScanner scanner;
+
+    public float pressure = 0;
+
+    public enum DataType {
+        X_COORDINATE,
+        Y_COORDINATE,
+        Z_COORDINATE,
+        RSSI_VALUE,
+        AIR_PRESSURE,
+        DEVICE_NAME,
+        UPDATE_TIME
+    }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void start() {
         byte[] message = createMessage();
-
-        ParcelUuid pUuid = new ParcelUuid(UUID.fromString(DeviceManager.instance.id + "0000000-0000-0000-0000-000000000000"));
 
         AdvertiseSettings adSettings = new AdvertiseSettings.Builder()
                 .setTxPowerLevel( AdvertiseSettings.ADVERTISE_TX_POWER_HIGH )
@@ -53,7 +60,6 @@ public class BluetoothManager {
                 .setIncludeDeviceName( false )
                 .setIncludeTxPowerLevel( false )
                 .addManufacturerData(APP_ID, message)
-                //.addServiceData( pUuid, message )
                 .build();
 
         advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
@@ -62,9 +68,9 @@ public class BluetoothManager {
         Log.d("Bluetooth", "Advertising Started");
 
 
-        ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
-        scanSettingsBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
-        ScanSettings scanSettings = scanSettingsBuilder.build();
+        ScanSettings scanSettings = new ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .build();
 
         scanner = BluetoothAdapter.getDefaultAdapter().getBluetoothLeScanner();
         scanner.startScan(new ArrayList<ScanFilter>(), scanSettings, scanCallback);
@@ -76,12 +82,18 @@ public class BluetoothManager {
         scanner.stopScan(scanCallback);
     }
 
+    public void restart() {
+        stop();
+        start();
+    }
+
     private byte[] createMessage() {
         byte[] message = new byte[MESSAGE_SIZE];
         byte id = (byte) DeviceManager.instance.id.charAt(0);
         byte[] x = ByteBuffer.allocate(4).putFloat(DeviceManager.instance.x).array();
         byte[] y = ByteBuffer.allocate(4).putFloat(DeviceManager.instance.y).array();
         byte[] z = ByteBuffer.allocate(4).putFloat(DeviceManager.instance.z).array();
+        byte[] pres = ByteBuffer.allocate(4).putFloat(pressure).array();
         message[0] = id;
         for (int i = 0; i < 4; i++) {
             message[i + 1] = x[i];
@@ -92,31 +104,40 @@ public class BluetoothManager {
         for (int i = 0; i < 4; i++) {
             message[i + 9] = z[i];
         }
+
+        for (int i = 0; i < 4; i++) {
+            message[i + 13] = pres[i];
+        }
+
         return message;
     }
 
     private void parseMessage(byte[] m, float rssi) {
+        Map<DataType, Object> map = new HashMap<DataType, Object>();
         Character id = Character.valueOf((char) m[0]);
         Log.d("Bluetooth", "{Device: " + id.toString() + ", RSSI Strength: " + rssi + "}" );
         byte[] x = {m[1], m[2], m[3], m[4]};
         byte[] y = {m[5], m[6], m[7], m[8]};
         byte[] z = {m[9], m[10], m[11], m[12]};
-        float[] values = new float[4];
-        values[0] = ByteBuffer.wrap(x).getFloat();
-        values[1] = ByteBuffer.wrap(y).getFloat();
-        values[2] = ByteBuffer.wrap(z).getFloat();
-        values[3] = rssi;
-        devices.put(id, new Pair<float[], Date>(values, new Date()));
+        byte[] pres = {m[13], m[14], m[15], m[16]};
+        map.put(DataType.DEVICE_NAME, id);
+        map.put(DataType.X_COORDINATE, ByteBuffer.wrap(x).getFloat());
+        map.put(DataType.Y_COORDINATE, ByteBuffer.wrap(y).getFloat());
+        map.put(DataType.Z_COORDINATE, ByteBuffer.wrap(z).getFloat());
+        map.put(DataType.RSSI_VALUE, rssi);
+        map.put(DataType.UPDATE_TIME, new Date().getTime());
+        map.put(DataType.AIR_PRESSURE, ByteBuffer.wrap(pres).getFloat());
+        devices.put(id, map);
     }
 
-    public ArrayList<float[]> getNearbyDevices() {
-        Date now = new Date();
-        ArrayList<float[]> values = new ArrayList<>();
-        Iterator<Map.Entry<Character, Pair<float[], Date>>> iter = devices.entrySet().iterator();
+    public ArrayList<Map<DataType, Object>> getNearbyDevices() {
+        long now = new Date().getTime();
+        ArrayList<Map<DataType, Object>> values = new ArrayList<>();
+        Iterator<Map.Entry<Character, Map<DataType, Object>>> iter = devices.entrySet().iterator();
         while (iter.hasNext()) {
-            Map.Entry<Character, Pair<float[], Date>> entry = iter.next();
-            if ((now.getTime() - entry.getValue().second.getTime()) / 1000 < SCAN_AGE_LIMIT) {
-                values.add(entry.getValue().first);
+            Map.Entry<Character, Map<DataType, Object>> entry = iter.next();
+            if ((now - (long) entry.getValue().get(DataType.UPDATE_TIME)) / 1000 < SCAN_AGE_LIMIT) {
+                values.add(entry.getValue());
             } else {
                 iter.remove();
             }

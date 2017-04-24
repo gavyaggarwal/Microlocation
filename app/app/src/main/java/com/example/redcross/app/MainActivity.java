@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
+import com.example.redcross.app.demos.AccelerometerDemo;
 import com.example.redcross.app.demos.TrilaterationDemo;
 import com.example.redcross.app.utils.DeviceManager;
 import com.example.redcross.app.utils.ServerConnection;
@@ -39,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         requestPermissions();
 
         // Start Demo
-        new TrilaterationDemo(this);
+        new TrilaterationDemo();
     }
 
 

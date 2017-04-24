@@ -8,8 +8,6 @@ import org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer
 import android.os.Handler;
 import android.util.Log;
 
-import com.example.redcross.app.DeviceAdActivity;
-import com.example.redcross.app.DeviceScanActivity;
 import com.example.redcross.app.NonLinearLeastSquaresSolver;
 import com.example.redcross.app.TrilaterationFunction;
 import com.example.redcross.app.utils.BluetoothManager;
@@ -17,6 +15,7 @@ import com.example.redcross.app.utils.DeviceManager;
 import com.example.redcross.app.utils.ServerConnection;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * Created by gavya on 4/19/2017.
@@ -25,7 +24,7 @@ import java.util.ArrayList;
 public class TrilaterationDemo {
     private Handler mHandler = new Handler();
 
-    public TrilaterationDemo(Context context) {
+    public TrilaterationDemo() {
         Log.d("Trilateration", "Started");
 
         // Start BLE advertising
@@ -49,10 +48,22 @@ public class TrilaterationDemo {
         return 0.5717 * Math.exp(-0.0798 * rssi) / 100;
     };
 
-    private double[] performTrilateration(double[][] positions, double[] distances) {
-        double x = 1e-7;
-        double y = 1e-7;
-        double z = 1e-7;
+    private double[] performTrilateration(double[][] positions, double[] distances, double x, double y, double z) {
+        // Perform a gradient descent to optimize the following objective function
+        //$$S = \sum^{n}_{i=1}{c_i(\sqrt{(x-x_i)^2 + (y-y_i)^2 + (z-z_i)^2} - d_i)^2} + \sqrt{(x-x_{old})^2 + (y-y_{old})^2 + (z-z_{old})^2}$$
+        
+        double xold = x;
+        double yold = y;
+        double zold = z;
+        if (x == 0) {
+            x = 1e-7;
+        }
+        if (y == 0) {
+            y = 1e-7;
+        }
+        if (z == 0) {
+            z = 1e-7;
+        }
 
         double eta = 0.01;
         double confidence = 1.0;
@@ -73,6 +84,17 @@ public class TrilaterationDemo {
                 gradz += 2 * confidence * distanceError / rad * dz;
                 error += confidence * distanceError * distanceError;
             }
+            double dx = x - xold;
+            double dy = y - yold;
+            double dz = z - zold;
+            double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (rad != 0) {
+                gradx += 2 / rad * dx;
+                grady += 2 / rad * dy;
+                gradz += 2 / rad * dz;
+                error += rad;
+            }
+
             x -= gradx * eta;
             y -= grady * eta;
             z -= gradz * eta;
@@ -84,21 +106,21 @@ public class TrilaterationDemo {
         @Override
         public void run() {
             try {
-                String testDevice = "E";
+                String testDevice = "C";
 
                 if (DeviceManager.instance.id.equals(testDevice)) {
-                    ArrayList<float[]> devices = BluetoothManager.instance.getNearbyDevices();
+                    ArrayList<Map<BluetoothManager.DataType, Object>> devices = BluetoothManager.instance.getNearbyDevices();
                     double[][] positions = new double[devices.size()][3];
                     double[] distances = new double[devices.size()];
 
                     if (devices.size() >= 2) {
                         for (int i = 0; i < devices.size(); i++) {
-                            float[] data = devices.get(i);
-                            positions[i][0] = (double) data[0];
-                            positions[i][1] = (double) data[1];
-                            positions[i][2] = (double) data[2];
+                            Map<BluetoothManager.DataType, Object> data = devices.get(i);
+                            positions[i][0] = ((Float)data.get(BluetoothManager.DataType.X_COORDINATE)).doubleValue();
+                            positions[i][1] = ((Float)data.get(BluetoothManager.DataType.Y_COORDINATE)).doubleValue();
+                            positions[i][2] = ((Float)data.get(BluetoothManager.DataType.Z_COORDINATE)).doubleValue();
 
-                            distances[i] = getDistance((double) data[3]);
+                            distances[i] = getDistance(((Float)data.get(BluetoothManager.DataType.RSSI_VALUE)).doubleValue());
 
                             //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
                         }
@@ -109,18 +131,21 @@ public class TrilaterationDemo {
 
                         // the answer
                         //double[] centroid = optimum.getPoint().toArray();
-                        double[] centroid = performTrilateration(positions, distances);
+                        double[] centroid = performTrilateration(positions, distances, DeviceManager.instance.x, DeviceManager.instance.y, DeviceManager.instance.z);
                         //Log.d("TEST1", String.valueOf(centroid.length));
-                        Log.d("TEST2", String.valueOf(centroid[0]) + " " + String.valueOf(centroid[1]) + " " + String.valueOf(centroid[2]));
                         Log.d("TEST1", String.valueOf(distances[0]) + " " + String.valueOf(distances[1]));
 
 
+                        DeviceManager.instance.x = (float) centroid[0];
+                        DeviceManager.instance.y = (float) centroid[1];
+                        DeviceManager.instance.z = (float) centroid[2];
+
+                        Log.d("TEST2", String.valueOf(DeviceManager.instance.x) + " " + String.valueOf(DeviceManager.instance.y) + " " + String.valueOf(DeviceManager.instance.z));
+
                         // Send data to server
-                        ServerConnection.instance.sendLocation((float) centroid[0], (float) centroid[1], (float) centroid[2]);
                     }
-                } else {
-                    ServerConnection.instance.sendLocation(DeviceManager.instance.x, DeviceManager.instance.y, DeviceManager.instance.z);
                 }
+                ServerConnection.instance.sendLocation(DeviceManager.instance.x, DeviceManager.instance.y, DeviceManager.instance.z);
 
             } finally {
                 mHandler.postDelayed(mStatusChecker, 100);

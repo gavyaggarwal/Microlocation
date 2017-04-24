@@ -47,14 +47,30 @@ public class TrilaterationUnitTest {
         double[][] positions = { {0, 0, 100}, {0, 100, 0}, {100, 0, 0} };
         double[] distances = { 100, 100, 100 };
 
-        double x = 100;
-        double y = 100;
-        double z = 100;
+        double x = 0;
+        double y = 0;
+        double z = 0;
+
+
+        // Perform a gradient descent to optimize the following objective function
+        //$$S = \sum^{n}_{i=1}{c_i(\sqrt{(x-x_i)^2 + (y-y_i)^2 + (z-z_i)^2} - d_i)^2} + \sqrt{(x-x_{old})^2 + (y-y_{old})^2 + (z-z_{old})^2}$$
+        double xold = x;
+        double yold = y;
+        double zold = z;
+        if (x == 0) {
+            x = 1e-7;
+        }
+        if (y == 0) {
+            y = 1e-7;
+        }
+        if (z == 0) {
+            z = 1e-7;
+        }
 
         double eta = 0.01;
         double confidence = 1.0;
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             double error = 0;
             double gradx = 0;
             double grady = 0;
@@ -70,6 +86,16 @@ public class TrilaterationUnitTest {
                 gradz += 2 * confidence * distanceError / rad * dz;
                 error += confidence * distanceError * distanceError;
             }
+
+            double dx = x - xold;
+            double dy = y - yold;
+            double dz = z - zold;
+            double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            gradx += 2 / rad * dx;
+            grady += 2 / rad * dy;
+            gradz += 2 / rad * dz;
+            error += rad;
+
             x -= gradx * eta;
             y -= grady * eta;
             z -= gradz * eta;
