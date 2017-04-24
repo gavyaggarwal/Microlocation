@@ -8,8 +8,8 @@ import android.util.Log;
  * Created by gavya on 4/14/2017.
  */
 
-public class DeviceManager {
-    public static DeviceManager instance = new DeviceManager();
+public class Device {
+    public static Device instance = new Device();
     public String id;
     public String color;
     public float x;

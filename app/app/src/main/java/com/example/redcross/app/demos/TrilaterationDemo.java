@@ -1,18 +1,13 @@
 package com.example.redcross.app.demos;
 
 import android.content.Context;
-
-import org.apache.commons.math3.fitting.leastsquares.LeastSquaresOptimizer.Optimum;
-import org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer;
-
 import android.os.Handler;
 import android.util.Log;
 
-import com.example.redcross.app.NonLinearLeastSquaresSolver;
-import com.example.redcross.app.TrilaterationFunction;
-import com.example.redcross.app.utils.BluetoothManager;
-import com.example.redcross.app.utils.DeviceManager;
-import com.example.redcross.app.utils.ServerConnection;
+import com.example.redcross.app.utils.Bluetooth;
+import com.example.redcross.app.utils.Device;
+import com.example.redcross.app.utils.Sensors;
+import com.example.redcross.app.utils.Server;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -24,24 +19,17 @@ import java.util.Map;
 public class TrilaterationDemo {
     private Handler mHandler = new Handler();
 
-    public TrilaterationDemo() {
+    public TrilaterationDemo(Context context) {
         Log.d("Trilateration", "Started");
 
-        // Start BLE advertising
-        BluetoothManager.instance.start();
+        // Turn on sensors
+        Sensors.instance.setContext(context);
 
-        // Start BLE scanning
-        //BLEScan = new DeviceScanActivity();
-        //BLEScan.beginScanning(true);
+        // Start bluetooth advertising + scanning
+        Bluetooth.instance.start();
 
-        // Get nearby devices, locations, and RSSI values from Annie
-        // Array of device id (A, B, C, D, E) and location (x, y, z) and rssi
+        // Periodically perform trilateration
         mStatusChecker.run();
-
-        // Map RSSI values to distances, meters (Abirami)
-
-        // Determine position of this device from distances and locations of other devices (Kabir)
-
     }
 
     private double getDistance(double rssi) {
@@ -51,7 +39,7 @@ public class TrilaterationDemo {
     private double[] performTrilateration(double[][] positions, double[] distances, double x, double y, double z) {
         // Perform a gradient descent to optimize the following objective function
         //$$S = \sum^{n}_{i=1}{c_i(\sqrt{(x-x_i)^2 + (y-y_i)^2 + (z-z_i)^2} - d_i)^2} + \sqrt{(x-x_{old})^2 + (y-y_{old})^2 + (z-z_{old})^2}$$
-        
+
         double xold = x;
         double yold = y;
         double zold = z;
@@ -106,21 +94,19 @@ public class TrilaterationDemo {
         @Override
         public void run() {
             try {
-                String testDevice = "C";
-
-                if (DeviceManager.instance.id.equals(testDevice)) {
-                    ArrayList<Map<BluetoothManager.DataType, Object>> devices = BluetoothManager.instance.getNearbyDevices();
+                if (Sensors.instance.getIsMoving() == true) {
+                    ArrayList<Map<Bluetooth.DataType, Object>> devices = Bluetooth.instance.getNearbyDevices();
                     double[][] positions = new double[devices.size()][3];
                     double[] distances = new double[devices.size()];
 
                     if (devices.size() >= 2) {
                         for (int i = 0; i < devices.size(); i++) {
-                            Map<BluetoothManager.DataType, Object> data = devices.get(i);
-                            positions[i][0] = ((Float)data.get(BluetoothManager.DataType.X_COORDINATE)).doubleValue();
-                            positions[i][1] = ((Float)data.get(BluetoothManager.DataType.Y_COORDINATE)).doubleValue();
-                            positions[i][2] = ((Float)data.get(BluetoothManager.DataType.Z_COORDINATE)).doubleValue();
+                            Map<Bluetooth.DataType, Object> data = devices.get(i);
+                            positions[i][0] = ((Float)data.get(Bluetooth.DataType.X_COORDINATE)).doubleValue();
+                            positions[i][1] = ((Float)data.get(Bluetooth.DataType.Y_COORDINATE)).doubleValue();
+                            positions[i][2] = ((Float)data.get(Bluetooth.DataType.Z_COORDINATE)).doubleValue();
 
-                            distances[i] = getDistance(((Float)data.get(BluetoothManager.DataType.RSSI_VALUE)).doubleValue());
+                            distances[i] = getDistance(((Float)data.get(Bluetooth.DataType.RSSI_VALUE)).doubleValue());
 
                             //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
                         }
@@ -131,21 +117,22 @@ public class TrilaterationDemo {
 
                         // the answer
                         //double[] centroid = optimum.getPoint().toArray();
-                        double[] centroid = performTrilateration(positions, distances, DeviceManager.instance.x, DeviceManager.instance.y, DeviceManager.instance.z);
+                        double[] centroid = performTrilateration(positions, distances, Device.instance.x, Device.instance.y, Device.instance.z);
                         //Log.d("TEST1", String.valueOf(centroid.length));
                         Log.d("TEST1", String.valueOf(distances[0]) + " " + String.valueOf(distances[1]));
 
 
-                        DeviceManager.instance.x = (float) centroid[0];
-                        DeviceManager.instance.y = (float) centroid[1];
-                        DeviceManager.instance.z = (float) centroid[2];
+                        Device.instance.x = (float) centroid[0];
+                        Device.instance.y = (float) centroid[1];
+                        Device.instance.z = (float) centroid[2];
 
-                        Log.d("TEST2", String.valueOf(DeviceManager.instance.x) + " " + String.valueOf(DeviceManager.instance.y) + " " + String.valueOf(DeviceManager.instance.z));
-
-                        // Send data to server
+                        Log.d("TEST2", String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
                     }
+                    Server.instance.sendDebug("Anchored", 0);
+                } else {
+                    Server.instance.sendDebug("Anchored", 1);
                 }
-                ServerConnection.instance.sendLocation(DeviceManager.instance.x, DeviceManager.instance.y, DeviceManager.instance.z);
+                Server.instance.sendLocation(Device.instance.x, Device.instance.y, Device.instance.z);
 
             } finally {
                 mHandler.postDelayed(mStatusChecker, 100);

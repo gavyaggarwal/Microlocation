@@ -2,7 +2,6 @@ package com.example.redcross.app.utils;
 
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
@@ -26,8 +25,8 @@ import java.util.Map;
  * Created by gavya on 4/23/2017.
  */
 
-public class BluetoothManager {
-    public static BluetoothManager instance = new BluetoothManager();
+public class Bluetooth {
+    public static Bluetooth instance = new Bluetooth();
     private Map<Character, Map<DataType, Object>> devices = new HashMap<>();
     private static final short APP_ID = 12124;
     private static final int SCAN_AGE_LIMIT = 1; // in seconds
@@ -89,10 +88,10 @@ public class BluetoothManager {
 
     private byte[] createMessage() {
         byte[] message = new byte[MESSAGE_SIZE];
-        byte id = (byte) DeviceManager.instance.id.charAt(0);
-        byte[] x = ByteBuffer.allocate(4).putFloat(DeviceManager.instance.x).array();
-        byte[] y = ByteBuffer.allocate(4).putFloat(DeviceManager.instance.y).array();
-        byte[] z = ByteBuffer.allocate(4).putFloat(DeviceManager.instance.z).array();
+        byte id = (byte) Device.instance.id.charAt(0);
+        byte[] x = ByteBuffer.allocate(4).putFloat(Device.instance.x).array();
+        byte[] y = ByteBuffer.allocate(4).putFloat(Device.instance.y).array();
+        byte[] z = ByteBuffer.allocate(4).putFloat(Device.instance.z).array();
         byte[] pres = ByteBuffer.allocate(4).putFloat(pressure).array();
         message[0] = id;
         for (int i = 0; i < 4; i++) {

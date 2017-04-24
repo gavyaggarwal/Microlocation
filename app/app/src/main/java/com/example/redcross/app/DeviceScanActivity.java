@@ -2,27 +2,13 @@ package com.example.redcross.app;
 
 import android.annotation.TargetApi;
 import android.app.ListActivity;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanResult;
-import android.bluetooth.le.ScanSettings;
 import android.os.Handler;
-import android.bluetooth.le.BluetoothLeScanner;
-import android.os.ParcelUuid;
-import android.util.Log;
 import android.util.Pair;
 
-import com.example.redcross.app.utils.DeviceManager;
-import com.example.redcross.app.utils.ServerConnection;
-
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
