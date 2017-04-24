@@ -12,6 +12,7 @@ import com.example.redcross.app.DeviceAdActivity;
 import com.example.redcross.app.DeviceScanActivity;
 import com.example.redcross.app.NonLinearLeastSquaresSolver;
 import com.example.redcross.app.TrilaterationFunction;
+import com.example.redcross.app.utils.BluetoothManager;
 import com.example.redcross.app.utils.DeviceManager;
 import com.example.redcross.app.utils.ServerConnection;
 
@@ -22,19 +23,17 @@ import java.util.ArrayList;
  */
 
 public class TrilaterationDemo {
-
-    private DeviceScanActivity BLEScan;
     private Handler mHandler = new Handler();
 
     public TrilaterationDemo(Context context) {
         Log.d("Trilateration", "Started");
 
         // Start BLE advertising
-        DeviceAdActivity BLEAd = new DeviceAdActivity();
+        BluetoothManager.instance.start();
 
         // Start BLE scanning
-        BLEScan = new DeviceScanActivity();
-        BLEScan.beginScanning(true);
+        //BLEScan = new DeviceScanActivity();
+        //BLEScan.beginScanning(true);
 
         // Get nearby devices, locations, and RSSI values from Annie
         // Array of device id (A, B, C, D, E) and location (x, y, z) and rssi
@@ -45,6 +44,10 @@ public class TrilaterationDemo {
         // Determine position of this device from distances and locations of other devices (Kabir)
 
     }
+
+    private double getDistance(double rssi) {
+        return 0.5717 * Math.exp(-0.0798 * rssi) / 100;
+    };
 
     private double[] performTrilateration(double[][] positions, double[] distances) {
         double x = 1e-7;
@@ -84,7 +87,7 @@ public class TrilaterationDemo {
                 String testDevice = "E";
 
                 if (DeviceManager.instance.id.equals(testDevice)) {
-                    ArrayList<float[]> devices = BLEScan.getNearbyDevices();
+                    ArrayList<float[]> devices = BluetoothManager.instance.getNearbyDevices();
                     double[][] positions = new double[devices.size()][3];
                     double[] distances = new double[devices.size()];
 
@@ -95,7 +98,7 @@ public class TrilaterationDemo {
                             positions[i][1] = (double) data[1];
                             positions[i][2] = (double) data[2];
 
-                            distances[i] = BLEScan.getDistance1((double) data[3]);
+                            distances[i] = getDistance((double) data[3]);
 
                             //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
                         }
