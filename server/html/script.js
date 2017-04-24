@@ -29,8 +29,8 @@ function updateLocationCharts(locations) {
     var data = locations.map(function(device) {
         return {
             x: device.x,
-            y: device.y,
-            z: device.z,
+            y: device.z,
+            z: device.y,
             style: colorMappingsHex[device.device]
         };
     });
@@ -41,7 +41,7 @@ function updateLocationCharts(locations) {
           height: '80vh',
           showShadow: true,
           verticalRatio: 0.5,
-          cameraPosition: {horizontal: 0, vertical: 1.57, distance: 2.0},
+          cameraPosition: {horizontal: 0.3, vertical: 0.1, distance: 2.0},
           style: 'dot-color',
           showLegend: false,
           xMax: 2,
@@ -50,6 +50,9 @@ function updateLocationCharts(locations) {
           yMin: -2,
           zMax: 2,
           zMin: -2,
+          xLabel: "X Position (meters)",
+          yLabel: "Z Position (meters)",
+          zLabel: "Y Position (meters)"
         };
 
         var container = document.getElementById('locations');

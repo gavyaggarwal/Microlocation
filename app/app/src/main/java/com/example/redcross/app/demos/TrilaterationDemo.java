@@ -36,7 +36,7 @@ public class TrilaterationDemo {
         return 0.5717 * Math.exp(-0.0798 * rssi) / 100;
     };
 
-    private double[] performTrilateration(double[][] positions, double[] distances, double x, double y, double z) {
+    private double[] performTrilateration(double[][] positions, double[] distances, double x, double y, double z, double ypres) {
         // Perform a gradient descent to optimize the following objective function
         //$$S = \sum^{n}_{i=1}{c_i(\sqrt{(x-x_i)^2 + (y-y_i)^2 + (z-z_i)^2} - d_i)^2} + \sqrt{(x-x_{old})^2 + (y-y_{old})^2 + (z-z_{old})^2}$$
 
@@ -82,6 +82,7 @@ public class TrilaterationDemo {
                 gradz += 2 / rad * dz;
                 error += rad;
             }
+            grady += 2 * (y - ypres) * 10;   // Pressure is fairly accurate, give it a strong influence
 
             x -= gradx * eta;
             y -= grady * eta;
@@ -94,40 +95,42 @@ public class TrilaterationDemo {
         @Override
         public void run() {
             try {
+                double y_barometer = Sensors.instance.estimatedHeight();
+                Server.instance.sendDebug("Estimated Height Change", (float) y_barometer);
                 if (Sensors.instance.getIsMoving() == true) {
                     ArrayList<Map<Bluetooth.DataType, Object>> devices = Bluetooth.instance.getNearbyDevices();
                     double[][] positions = new double[devices.size()][3];
                     double[] distances = new double[devices.size()];
 
-                    if (devices.size() >= 2) {
-                        for (int i = 0; i < devices.size(); i++) {
-                            Map<Bluetooth.DataType, Object> data = devices.get(i);
-                            positions[i][0] = ((Float)data.get(Bluetooth.DataType.X_COORDINATE)).doubleValue();
-                            positions[i][1] = ((Float)data.get(Bluetooth.DataType.Y_COORDINATE)).doubleValue();
-                            positions[i][2] = ((Float)data.get(Bluetooth.DataType.Z_COORDINATE)).doubleValue();
 
-                            distances[i] = getDistance(((Float)data.get(Bluetooth.DataType.RSSI_VALUE)).doubleValue());
+                    for (int i = 0; i < devices.size(); i++) {
+                        Map<Bluetooth.DataType, Object> data = devices.get(i);
+                        positions[i][0] = ((Float)data.get(Bluetooth.DataType.X_COORDINATE)).doubleValue();
+                        positions[i][1] = ((Float)data.get(Bluetooth.DataType.Y_COORDINATE)).doubleValue();
+                        positions[i][2] = ((Float)data.get(Bluetooth.DataType.Z_COORDINATE)).doubleValue();
 
-                            //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
-                        }
+                        distances[i] = getDistance(((Float)data.get(Bluetooth.DataType.RSSI_VALUE)).doubleValue());
 
-
-                        //NonLinearLeastSquaresSolver solver = new NonLinearLeastSquaresSolver(new TrilaterationFunction(positions, distances), new LevenbergMarquardtOptimizer());
-                        //Optimum optimum = solver.solve();
-
-                        // the answer
-                        //double[] centroid = optimum.getPoint().toArray();
-                        double[] centroid = performTrilateration(positions, distances, Device.instance.x, Device.instance.y, Device.instance.z);
-                        //Log.d("TEST1", String.valueOf(centroid.length));
-                        Log.d("TEST1", String.valueOf(distances[0]) + " " + String.valueOf(distances[1]));
-
-
-                        Device.instance.x = (float) centroid[0];
-                        Device.instance.y = (float) centroid[1];
-                        Device.instance.z = (float) centroid[2];
-
-                        Log.d("TEST2", String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
+                        //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
                     }
+
+
+                    //NonLinearLeastSquaresSolver solver = new NonLinearLeastSquaresSolver(new TrilaterationFunction(positions, distances), new LevenbergMarquardtOptimizer());
+                    //Optimum optimum = solver.solve();
+
+                    // the answer
+                    //double[] centroid = optimum.getPoint().toArray();
+                    double[] centroid = performTrilateration(positions, distances, Device.instance.x, Device.instance.y, Device.instance.z, y_barometer);
+
+
+
+                    Device.instance.x = (float) centroid[0];
+                    Device.instance.y = (float) centroid[1];
+                    Device.instance.z = (float) centroid[2];
+
+                    Log.d("Current Location", String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
+
+
                     Server.instance.sendDebug("Anchored", 0);
                 } else {
                     Server.instance.sendDebug("Anchored", 1);

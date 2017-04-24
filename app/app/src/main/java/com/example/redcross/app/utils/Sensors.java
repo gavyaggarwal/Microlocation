@@ -16,8 +16,8 @@ import java.util.Date;
 public class Sensors implements SensorEventListener {
     public static Sensors instance = new Sensors();
     private boolean isCurrentlyMoving = false;
-    private Date updateDate = new Date();
-    private final double pressureToDistanceConstant = 8.945077;
+    private long updateTime = 0;
+    private final double HPA_PER_METER = 0.11179333;
     // The pressure decreases by 0.11179333 hPa for every meter increase in altitude
     public float referencePressure;
     public float referenceHeight;
@@ -42,7 +42,12 @@ public class Sensors implements SensorEventListener {
     }
 
     public boolean getIsMoving() {
-        return isCurrentlyMoving || new Date().getTime() - updateDate.getTime() < 1000;
+        return isCurrentlyMoving || new Date().getTime() - updateTime < 1000;
+    }
+
+    public double estimatedHeight() {
+        Server.instance.sendDebug("Estimated Height", (float) (-currentPressure / HPA_PER_METER));
+        return (referencePressure - currentPressure) / HPA_PER_METER / 2 + referenceHeight;
     }
 
     @Override
@@ -53,11 +58,11 @@ public class Sensors implements SensorEventListener {
             float y = event.values[1];
             float z = event.values[2];
             if (x > 0.01 || y > 0.01 || z > 0.01) {
-                if (!isCurrentlyMoving) updateDate = new Date();
+                if (!isCurrentlyMoving) updateTime = new Date().getTime();
                 isCurrentlyMoving = true;
             }
             else {
-                if (isCurrentlyMoving) updateDate = new Date();
+                if (isCurrentlyMoving) updateTime = new Date().getTime();
                 isCurrentlyMoving = false;
             }
 
@@ -66,7 +71,7 @@ public class Sensors implements SensorEventListener {
             float p = event.values[0];
             // Let p = smooth average of values
             currentPressure = p;
-            if (!isCurrentlyMoving) {
+            if (!getIsMoving()) {
                 referencePressure = p;
                 referenceHeight = Device.instance.y;
             }
