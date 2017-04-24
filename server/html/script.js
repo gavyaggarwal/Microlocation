@@ -4,13 +4,17 @@ var colorMappings = {
     C: "rgb(255, 206, 86)",
     D: "rgb(75, 192, 192)",
     E: "rgb(153, 102, 255)"
-}
+};
 
-var locationCharts = {
-    xy: null,
-    xz: null,
-    yz: null
-}
+var colorMappingsHex = {
+    A: "#FF6384",
+    B: "#36A2EB",
+    C: "#FFCE56",
+    D: "#4BC0C0",
+    E: "#9866FF"
+};
+
+var locationChart= null;
 var debugCharts = {};
 
 function saveCanvas() {
@@ -21,57 +25,33 @@ function saveCanvas() {
     window.location.href = image;
 }
 
-function makeLocationDataset(locations, x, y) {
-    return locations.map(function(device) {
+function updateLocationCharts(locations) {
+    var data = locations.map(function(device) {
         return {
-            label: device.device,
-            data: [{
-                x: device[x],
-                y: device[y],
-                r: 6
-            }],
-            backgroundColor: colorMappings[device.device],
+            x: device.x,
+            y: device.y,
+            z: device.z,
+            style: colorMappingsHex[device.device]
         };
     });
-}
 
-function makeLocationChart(plane, title) {
-    canvas = document.getElementById(plane + "_plane");
-    canvas.onclick = saveCanvas;
-    locationCharts[plane] = new Chart(canvas, {
-        type: 'bubble',
-        data: {
-            datasets: []
-        },
-        options: {
-            title: {
-                display: true,
-                text: title
-            },
-            animation: false
-        }
-    });
-}
+    if (locationChart == null) {
+        var options = {
+          width:  'calc(100vw - 17px)',
+          height: '80vh',
+          showShadow: true,
+          verticalRatio: 0.5,
+          cameraPosition: {horizontal: 1.0, vertical: 0.5, distance: 2.0},
+          style: 'dot-color',
+          showLegend: false
+        };
 
-function updateLocationCharts(locations) {
-    if (locationCharts.xy == null) {
-        makeLocationChart("xy", "Front View");
+        var container = document.getElementById('locations');
+        locationChart = new vis.Graph3d(container, data, options);
+    } else {
+        locationChart.setData(data);
+        locationChart.redraw();
     }
-    if (locationCharts.xz == null) {
-        makeLocationChart("xz", "Top View");
-    }
-    if (locationCharts.yz == null) {
-        makeLocationChart("yz", "Side View");
-    }
-
-    locationCharts.xy.data.datasets = makeLocationDataset(locations, "x", "y");
-    locationCharts.xy.update();
-
-    locationCharts.xz.data.datasets = makeLocationDataset(locations, "x", "z");
-    locationCharts.xz.update();
-
-    locationCharts.yz.data.datasets = makeLocationDataset(locations, "z", "y");
-    locationCharts.yz.update();
 }
 
 function makeDebugChart(name, deviceName) {
