@@ -2,27 +2,13 @@ package com.example.redcross.app;
 
 import android.annotation.TargetApi;
 import android.app.ListActivity;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanResult;
-import android.bluetooth.le.ScanSettings;
 import android.os.Handler;
-import android.bluetooth.le.BluetoothLeScanner;
-import android.os.ParcelUuid;
-import android.util.Log;
 import android.util.Pair;
 
-import com.example.redcross.app.utils.DeviceManager;
-import com.example.redcross.app.utils.ServerConnection;
-
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -36,12 +22,12 @@ public class DeviceScanActivity extends ListActivity {
 
     private Handler scanHandler = new Handler();
     private List<ScanFilter> scanFilters = new ArrayList<ScanFilter>();
-    private ScanSettings scanSettings;
     private boolean isScanning = false;
     private Map<Character, Pair<float[], Date>> devices = new HashMap<>();
     private List<Integer> RSSIvals = new ArrayList<>();
     private int txPower;
     private static final byte APP_ID = (byte) 197;
+<<<<<<< HEAD
     private static final int SCAN_AGE_LIMIT = 20; // in seconds
 
     public void beginScanning(boolean continuous) {
@@ -114,19 +100,11 @@ public class DeviceScanActivity extends ListActivity {
                 if (id == 'C' ) {
                     RSSIvals.add(RSSI);
                 }
+=======
+
+>>>>>>> 356c7ae906e8983d4f349dabe54723efe118bcff
 
 
-            } catch (Exception e) {
-            }
-        }
-
-        @Override
-        public void onScanFailed(int errorCode) {
-            super.onScanFailed(errorCode);
-
-            // a scan error occurred
-        }
-    };
 
     private double getAverage(List<Integer> nums) {
         double sum = 0;
@@ -148,6 +126,7 @@ public class DeviceScanActivity extends ListActivity {
         }
     }
 
+<<<<<<< HEAD
     public double getDistance1(double rssi) {
         if (rssi == 0) {
             return -1.0; // if we cannot determine accuracy, return -1.
@@ -163,6 +142,8 @@ public class DeviceScanActivity extends ListActivity {
         }
     };
 
+=======
+>>>>>>> 356c7ae906e8983d4f349dabe54723efe118bcff
     private double getDistance2(double rssi) {
         /*
         * RSSI = TxPower - 10 * n * lg(d)
@@ -175,6 +156,7 @@ public class DeviceScanActivity extends ListActivity {
 
     };
 
+<<<<<<< HEAD
     private void parseMessage(byte[] m, float rssi) {
         Character id = Character.valueOf((char) m[2]);
         byte[] x = {m[3], m[4], m[5], m[6]};
@@ -202,5 +184,7 @@ public class DeviceScanActivity extends ListActivity {
         }
         return values;
     }
+=======
+>>>>>>> 356c7ae906e8983d4f349dabe54723efe118bcff
 
 }

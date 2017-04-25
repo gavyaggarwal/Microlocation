@@ -12,13 +12,13 @@ import java.net.URISyntaxException;
  * Created by gavya on 4/14/2017.
  */
 
-public class ServerConnection {
-    public static ServerConnection instance = new ServerConnection();
+public class Server {
+    public static Server instance = new Server();
     private WebSocketClient client;
     private boolean connectionOpen;
     public String deviceID;
 
-    public ServerConnection() {
+    public Server() {
         URI uri;
         try {
             uri = new URI("ws://microlocation.herokuapp.com/messages");

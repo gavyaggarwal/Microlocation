@@ -13,8 +13,9 @@ import android.util.Log;
 import android.widget.TextView;
 
 import com.example.redcross.app.demos.TrilaterationDemo;
-import com.example.redcross.app.utils.DeviceManager;
-import com.example.redcross.app.utils.ServerConnection;
+import com.example.redcross.app.utils.Sensors;
+import com.example.redcross.app.utils.Device;
+import com.example.redcross.app.utils.Server;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
@@ -25,14 +26,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // Initialize Device Manager and Server Connection
-        DeviceManager.instance.setContext(this);
-        ServerConnection.instance.deviceID = DeviceManager.instance.id;
+        Device.instance.setContext(this);
+        Server.instance.deviceID = Device.instance.id;
 
         // Configure UI
         TextView textView = (TextView)findViewById(R.id.textView);
-        textView.setText("Device " + DeviceManager.instance.id);
+        textView.setText("Device " + Device.instance.id);
 
-        int backgroundColor = Color.parseColor(DeviceManager.instance.color);
+        int backgroundColor = Color.parseColor(Device.instance.color);
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
 
         // Request necessary permissions
