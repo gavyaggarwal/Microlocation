@@ -55,13 +55,10 @@ public class DeviceAdActivity extends ListActivity {
     }
 
     public void beginAdvertising(boolean continuous) {
-        Log.d( "BLE AD", "Advertising gets called ");
         byte[] message = getMessage();
 
         ParcelUuid pUuid = new ParcelUuid(UUID.fromString(DeviceManager.instance.id + "0000000-0000-0000-0000-000000000000"));
 
-        Log.d("par id", pUuid.toString());
-        Log.d( "BLE AD", "Advertising uuid set up ");
         adSettings = new AdvertiseSettings.Builder()
                 .setTxPowerLevel( AdvertiseSettings.ADVERTISE_TX_POWER_HIGH )
                 .setConnectable( false )
@@ -77,7 +74,7 @@ public class DeviceAdActivity extends ListActivity {
         if (continuous) {
             BluetoothLeAdvertiser advertiser = BluetoothAdapter.getDefaultAdapter(). getBluetoothLeAdvertiser() ;
             advertiser.startAdvertising(adSettings, adData, adCallback);
-            Log.d("BLE Ad", "In Progress");
+            Log.d("BLEAd", "In Progress");
         }
         else {
             adHandler.post(adRunnable);
@@ -92,11 +89,11 @@ public class DeviceAdActivity extends ListActivity {
 
             if (isAdvertising) {
                 advertiser.stopAdvertising(adCallback);
-                Log.d("BLE Ad", "Ended");
+                Log.d("BLEAd", "Ended");
             } else {
 //                scanner.startScan(scanFilters, scanSettings, scanCallback);
                 advertiser.startAdvertising(adSettings, adData, adCallback);
-                Log.d("BLE Ad", "In Progress");
+                Log.d("BLEAd", "In Progress");
             }
 
             isAdvertising = !isAdvertising;
@@ -109,12 +106,12 @@ public class DeviceAdActivity extends ListActivity {
     private AdvertiseCallback adCallback = new AdvertiseCallback() {
         public void onStartSuccess(AdvertiseSettings settingsInEffect) {
             super.onStartSuccess(settingsInEffect);
-            Log.d( "BLE AD", "Advertising onStartSuccess ");
+            Log.d( "BLEAd", "Advertising onStartSuccess ");
         };
 
         public void onStartFailure(int errorCode) {
             super.onStartFailure(errorCode);
-            Log.d( "BLE AD", "Advertising onStartFailure: " + errorCode );
+            Log.d( "BLEAd", "Advertising onStartFailure: " + errorCode );
         };
     };
 

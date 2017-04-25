@@ -32,7 +32,7 @@ import java.util.Map;
 
 @TargetApi(21)
 public class DeviceScanActivity extends ListActivity {
-    private static final int SCAN_INTERVAL_MS = 3000;
+    private static final int SCAN_INTERVAL_MS = 30000;
 
     private Handler scanHandler = new Handler();
     private List<ScanFilter> scanFilters = new ArrayList<ScanFilter>();
@@ -50,8 +50,7 @@ public class DeviceScanActivity extends ListActivity {
         scanSettings = scanSettingsBuilder.build();
 
         ScanFilter.Builder scanFiltersBuilder = new ScanFilter.Builder();
-        scanFiltersBuilder.setServiceUuid(ParcelUuid.fromString("c0000000-0000-0000-0000-000000000000"),
-                ParcelUuid.fromString("01111111-1111-1111-1111-111111111111"));
+        scanFiltersBuilder.setServiceUuid(ParcelUuid.fromString("c0000000-0000-0000-0000-000000000000"));
         //scanFilters.add(scanFiltersBuilder.build());
 
         if (continuous) {
@@ -105,14 +104,17 @@ public class DeviceScanActivity extends ListActivity {
                 byte b[] = result.getScanRecord().getServiceData().values().iterator().next();
                 if (b.length == 15 && b[0] == APP_ID) {
                     parseMessage(b, (float) RSSI);
+
+                }
+//                txPower = result.getScanRecord().getTxPowerLevel();
+//                ServerConnection.instance.sendDebug("RSSI Constant", RSSI);
+
+                Character id = Character.valueOf((char) b[2]);
+
+                if (id == 'C' ) {
+                    RSSIvals.add(RSSI);
                 }
 
-                RSSIvals.add(RSSI);
-                txPower = result.getScanRecord().getTxPowerLevel();
-                BluetoothDevice remDevice = result.getDevice();
-                ServerConnection.instance.sendDebug("RSSI Constant", RSSI);
-                String address = remDevice.getAddress();
-                Log.d("Found Device", "{Device: " + address + ", RSSI Strength: " + RSSI +"}" );
 
             } catch (Exception e) {
             }
@@ -151,7 +153,7 @@ public class DeviceScanActivity extends ListActivity {
             return -1.0; // if we cannot determine accuracy, return -1.
         }
 
-        double ratio = rssi*1.0/txPower;
+        double ratio = rssi*1.0/-59;
         if (ratio < 1.0) {
             return Math.pow(ratio,10);
         }
@@ -169,13 +171,12 @@ public class DeviceScanActivity extends ListActivity {
         * d = 10 ^ ((TxPower - RSSI) / (10 * n))
         */
 
-        return Math.pow(10d, ((double) txPower - rssi) / (10 * 2));
+        return 0.5717 * Math.exp(0.0798 * rssi);
 
     };
 
     private void parseMessage(byte[] m, float rssi) {
         Character id = Character.valueOf((char) m[2]);
-        //Log.d("Found Device", "{Device: " + id.toString() + ", RSSI Strength: " + rssi + "}" );
         byte[] x = {m[3], m[4], m[5], m[6]};
         byte[] y = {m[7], m[8], m[9], m[10]};
         byte[] z = {m[11], m[12], m[13], m[14]};

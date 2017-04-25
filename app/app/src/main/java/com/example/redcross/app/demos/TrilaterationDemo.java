@@ -33,7 +33,7 @@ public class TrilaterationDemo {
 
         // Start BLE scanning
         BLEScan = new DeviceScanActivity();
-        BLEScan.beginScanning();
+        BLEScan.beginScanning(false);
 
         // Get nearby devices, locations, and RSSI values from Annie
         // Array of device id (A, B, C, D, E) and location (x, y, z) and rssi
