@@ -12,6 +12,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
@@ -25,6 +26,7 @@ import java.util.Map;
  * Created by gavya on 4/23/2017.
  */
 
+@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class Bluetooth {
     public static Bluetooth instance = new Bluetooth();
     private Map<Character, Map<DataType, Object>> devices = new HashMap<>();

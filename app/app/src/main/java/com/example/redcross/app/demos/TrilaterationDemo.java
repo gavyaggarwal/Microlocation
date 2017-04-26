@@ -25,15 +25,9 @@ public class TrilaterationDemo {
         // Turn on sensors
         Sensors.instance.setContext(context);
 
-<<<<<<< HEAD
-        // Start BLE scanning
-        BLEScan = new DeviceScanActivity();
-        BLEScan.beginScanning(false);
-=======
+
         // Start bluetooth advertising + scanning
         Bluetooth.instance.start();
->>>>>>> 356c7ae906e8983d4f349dabe54723efe118bcff
-
         // Periodically perform trilateration
         mStatusChecker.run();
     }

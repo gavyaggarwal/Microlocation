@@ -2,8 +2,10 @@ package com.example.redcross.app;
 
 import android.Manifest;
 import android.content.DialogInterface;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
@@ -28,6 +30,12 @@ public class MainActivity extends AppCompatActivity {
         // Initialize Device Manager and Server Connection
         Device.instance.setContext(this);
         Server.instance.deviceID = Device.instance.id;
+
+        // Initialize Broadcast Reciever to manage Wi-Fi connection
+        registerReceiver(
+                new Server.ConnectivityChangeReceiver(),
+                new IntentFilter(
+                        ConnectivityManager.CONNECTIVITY_ACTION));
 
         // Configure UI
         TextView textView = (TextView)findViewById(R.id.textView);
