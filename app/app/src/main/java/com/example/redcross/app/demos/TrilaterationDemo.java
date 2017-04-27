@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.example.redcross.app.utils.Bluetooth;
 import com.example.redcross.app.utils.Device;
+import com.example.redcross.app.utils.MovingAverage;
 import com.example.redcross.app.utils.Sensors;
 import com.example.redcross.app.utils.Server;
 
@@ -114,7 +115,9 @@ public class TrilaterationDemo {
                         positions[i][1] = ((Float)data.get(Bluetooth.DataType.Y_COORDINATE)).doubleValue();
                         positions[i][2] = ((Float)data.get(Bluetooth.DataType.Z_COORDINATE)).doubleValue();
 
-                        distances[i] = getDistance(((Float)data.get(Bluetooth.DataType.RSSI_VALUE)).doubleValue());
+                        MovingAverage rssi = (MovingAverage) data.get(Bluetooth.DataType.RSSI_VALUE);
+
+                        distances[i] = getDistance((double) rssi.average());
 
                         //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
                     }
