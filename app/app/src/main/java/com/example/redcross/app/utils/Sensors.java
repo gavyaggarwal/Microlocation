@@ -22,6 +22,7 @@ public class Sensors implements SensorEventListener {
     public float referencePressure;
     public float referenceHeight;
     public float currentPressure;
+    private MovingAverage averager = new MovingAverage(1000);
 
     public void setContext(Context context) {
         Log.d("Sensors", "Turning on Sensors");
@@ -64,11 +65,12 @@ public class Sensors implements SensorEventListener {
 
         }
         if (mySensor.getType() == Sensor.TYPE_PRESSURE) {
-            float p = event.values[0];
-            // Let p = smooth average of values
-            currentPressure = p;
+            float pressure = event.values[0];
+            averager.add(pressure);
+            float averagePressure = averager.average();
+            currentPressure = averagePressure;
             if (!getIsMoving()) {
-                referencePressure = p;
+                referencePressure = averagePressure;
                 referenceHeight = Device.instance.y;
             }
         }

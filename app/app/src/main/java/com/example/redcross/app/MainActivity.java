@@ -48,9 +48,9 @@ public class MainActivity extends AppCompatActivity {
         requestPermissions();
 
         // Start Demo
-        //new TrilaterationDemo(this);
+        new TrilaterationDemo(this);
 
-        Sensors.instance.setContext(this);
+        //Sensors.instance.setContext(this);
     }
 
 
