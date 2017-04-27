@@ -88,25 +88,6 @@ public class Server {
         }
 
         private void debugIntent(Intent intent, String tag) {
-            Bundle extras = intent.getExtras();
-            if (extras != null) {
-                if (extras.get("noConnectivity") == true) {
-                    connected = false;
-                }
-                if (extras.get("networkInfo") != null) {
-                    if (extras.get("networkInfo").toString().contains("DISCON")) {
-                        Log.d(tag, "wifi disconnected");
-                        connected = false;
-                    }
-                    else {
-                        Server.instance.client.connect();
-                        Log.d(tag, "wifi connected, reconnect to server");
-                    }
-                }
-            }
-            else {
-                Log.d(tag, "no extras");
-            }
         }
 
     }

@@ -32,24 +32,33 @@ public class Bluetooth {
     private Map<Character, Map<DataType, Object>> devices = new HashMap<>();
     private static final short APP_ID = 12124;
     private static final int SCAN_AGE_LIMIT = 1; // in seconds
-    private static final byte MESSAGE_SIZE = 17;
+    private static final byte MESSAGE_SIZE = 13;
     private BluetoothLeAdvertiser advertiser;
     private BluetoothLeScanner scanner;
-
-    public float pressure = 0;
 
     public enum DataType {
         X_COORDINATE,
         Y_COORDINATE,
         Z_COORDINATE,
         RSSI_VALUE,
-        AIR_PRESSURE,
         DEVICE_NAME,
         UPDATE_TIME
-    }
+    };
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void start() {
+        startAdvertising();
+        startScanning();
+
+        Log.d("Bluetooth", "Advertising and Scanning Started");
+    }
+
+    public void stop() {
+        stopAdvertising();
+        stopScanning();
+    }
+
+    public void startAdvertising() {
         byte[] message = createMessage();
 
         AdvertiseSettings adSettings = new AdvertiseSettings.Builder()
@@ -65,27 +74,28 @@ public class Bluetooth {
 
         advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
         advertiser.startAdvertising(adSettings, adData, advertiseCallback);
+    }
 
-        Log.d("Bluetooth", "Advertising Started");
-
-
+    public void startScanning() {
         ScanSettings scanSettings = new ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build();
 
         scanner = BluetoothAdapter.getDefaultAdapter().getBluetoothLeScanner();
         scanner.startScan(new ArrayList<ScanFilter>(), scanSettings, scanCallback);
-        Log.d("Bluetooth", "Scanning Started");
     }
 
-    public void stop() {
+    public void stopAdvertising() {
         advertiser.stopAdvertising(advertiseCallback);
+    }
+
+    public void stopScanning() {
         scanner.stopScan(scanCallback);
     }
 
-    public void restart() {
-        stop();
-        start();
+    public void updateMessage() {
+        stopAdvertising();
+        startAdvertising();
     }
 
     private byte[] createMessage() {
@@ -94,7 +104,6 @@ public class Bluetooth {
         byte[] x = ByteBuffer.allocate(4).putFloat(Device.instance.x).array();
         byte[] y = ByteBuffer.allocate(4).putFloat(Device.instance.y).array();
         byte[] z = ByteBuffer.allocate(4).putFloat(Device.instance.z).array();
-        byte[] pres = ByteBuffer.allocate(4).putFloat(pressure).array();
         message[0] = id;
         for (int i = 0; i < 4; i++) {
             message[i + 1] = x[i];
@@ -105,29 +114,21 @@ public class Bluetooth {
         for (int i = 0; i < 4; i++) {
             message[i + 9] = z[i];
         }
-
-        for (int i = 0; i < 4; i++) {
-            message[i + 13] = pres[i];
-        }
-
         return message;
     }
 
     private void parseMessage(byte[] m, float rssi) {
         Map<DataType, Object> map = new HashMap<DataType, Object>();
         Character id = Character.valueOf((char) m[0]);
-        Log.d("Bluetooth", "{Device: " + id.toString() + ", RSSI Strength: " + rssi + "}" );
         byte[] x = {m[1], m[2], m[3], m[4]};
         byte[] y = {m[5], m[6], m[7], m[8]};
         byte[] z = {m[9], m[10], m[11], m[12]};
-        byte[] pres = {m[13], m[14], m[15], m[16]};
         map.put(DataType.DEVICE_NAME, id);
         map.put(DataType.X_COORDINATE, ByteBuffer.wrap(x).getFloat());
         map.put(DataType.Y_COORDINATE, ByteBuffer.wrap(y).getFloat());
         map.put(DataType.Z_COORDINATE, ByteBuffer.wrap(z).getFloat());
         map.put(DataType.RSSI_VALUE, rssi);
         map.put(DataType.UPDATE_TIME, new Date().getTime());
-        map.put(DataType.AIR_PRESSURE, ByteBuffer.wrap(pres).getFloat());
         devices.put(id, map);
     }
 
