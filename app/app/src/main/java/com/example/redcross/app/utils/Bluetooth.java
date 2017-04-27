@@ -43,6 +43,7 @@ public class Bluetooth {
         Y_COORDINATE,
         Z_COORDINATE,
         RSSI_VALUE,
+        RSSI_BUFFER,
         AIR_PRESSURE,
         DEVICE_NAME,
         UPDATE_TIME
@@ -116,7 +117,13 @@ public class Bluetooth {
     private void parseMessage(byte[] m, float rssi) {
         Map<DataType, Object> map = new HashMap<DataType, Object>();
         Character id = Character.valueOf((char) m[0]);
-        Log.d("Bluetooth", "{Device: " + id.toString() + ", RSSI Strength: " + rssi + "}" );
+        MovingAverage RSSI;
+        if (devices.get(id) != null) {
+            RSSI = (MovingAverage) devices.get(id).get(DataType.RSSI_BUFFER);
+        } else {
+            RSSI = new MovingAverage(5000);
+        };
+        RSSI.add(rssi);
         byte[] x = {m[1], m[2], m[3], m[4]};
         byte[] y = {m[5], m[6], m[7], m[8]};
         byte[] z = {m[9], m[10], m[11], m[12]};
@@ -125,9 +132,10 @@ public class Bluetooth {
         map.put(DataType.X_COORDINATE, ByteBuffer.wrap(x).getFloat());
         map.put(DataType.Y_COORDINATE, ByteBuffer.wrap(y).getFloat());
         map.put(DataType.Z_COORDINATE, ByteBuffer.wrap(z).getFloat());
-        map.put(DataType.RSSI_VALUE, rssi);
+        map.put(DataType.RSSI_VALUE, RSSI.average());
         map.put(DataType.UPDATE_TIME, new Date().getTime());
         map.put(DataType.AIR_PRESSURE, ByteBuffer.wrap(pres).getFloat());
+        map.put(DataType.RSSI_BUFFER, RSSI);
         devices.put(id, map);
     }
 
@@ -164,10 +172,9 @@ public class Bluetooth {
             super.onScanResult(callbackType, result);
 
             try {
-                int RSSI = result.getRssi();
                 byte b[] = result.getScanRecord().getManufacturerSpecificData(APP_ID);
                 if (b != null && b.length == MESSAGE_SIZE) {
-                    parseMessage(b, (float) RSSI);
+                    parseMessage(b, (float) result.getRssi());
                 }
             } catch (Exception e) {
                 Log.d("Bluetooth", "Error Parsing Scan Result: " + e.toString());

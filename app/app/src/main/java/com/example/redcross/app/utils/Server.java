@@ -90,7 +90,8 @@ public class Server {
         private void debugIntent(Intent intent, String tag) {
             Bundle extras = intent.getExtras();
             if (extras != null) {
-                if (extras.get("noConnectivity") == true) {
+                Log.d(tag, extras.get("networkInfo").toString());
+                if (extras.get("noConnectivity") != null) {
                     connected = false;
                 }
                 if (extras.get("networkInfo") != null) {
@@ -99,8 +100,11 @@ public class Server {
                         connected = false;
                     }
                     else {
-                        Server.instance.client.connect();
-                        Log.d(tag, "wifi connected, reconnect to server");
+                        if (connected == false) {
+//                            Server.instance.client.connect();
+                            Log.d(tag, "wifi connected, reconnect to server");
+                            connected = true;
+                        }
                     }
                 }
             }
