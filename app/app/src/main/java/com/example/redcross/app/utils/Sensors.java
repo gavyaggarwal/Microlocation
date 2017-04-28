@@ -22,9 +22,7 @@ public class Sensors implements SensorEventListener {
     public float referencePressure;
     public float referenceHeight;
     public float currentPressure;
-
-    //private Handler mHandler = new Handler();
-
+    private MovingAverage averager = new MovingAverage(1000);
 
     public void setContext(Context context) {
         Log.d("Sensors", "Turning on Sensors");
@@ -36,9 +34,8 @@ public class Sensors implements SensorEventListener {
         Sensor barometer = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
         sensorManager.registerListener(this, barometer , SensorManager.SENSOR_DELAY_NORMAL);
 
-        //Bluetooth.instance.start();
-
-        //mStatusChecker.run();
+        Sensor rotation = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        sensorManager.registerListener(this, rotation, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     public boolean getIsMoving() {
@@ -46,7 +43,7 @@ public class Sensors implements SensorEventListener {
     }
 
     public double estimatedHeight() {
-        Server.instance.sendDebug("Estimated Height", (float) (-currentPressure / HPA_PER_METER));
+        //Server.instance.sendDebug("Estimated Height", (float) (-currentPressure / HPA_PER_METER));
         return (referencePressure - currentPressure) / HPA_PER_METER / 2 + referenceHeight;
     }
 
@@ -68,13 +65,21 @@ public class Sensors implements SensorEventListener {
 
         }
         if (mySensor.getType() == Sensor.TYPE_PRESSURE) {
-            float p = event.values[0];
-            // Let p = smooth average of values
-            currentPressure = p;
+            float pressure = event.values[0];
+            averager.add(pressure);
+            float averagePressure = averager.average();
+            currentPressure = averagePressure;
             if (!getIsMoving()) {
-                referencePressure = p;
+                referencePressure = averagePressure;
                 referenceHeight = Device.instance.y;
             }
+        }
+        if (mySensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+            float x = event.values[0];
+            float y = event.values[1];
+            float z = event.values[2];
+            float scalar = event.values[3];
+            Log.d("Rotation", String.valueOf(x) + " " + String.valueOf(y) + " " + String.valueOf(z) + " " + String.valueOf(scalar));
         }
     }
 
@@ -82,31 +87,4 @@ public class Sensors implements SensorEventListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         Log.d("Sensors", "Accuracy Changed: " + Integer.toString(accuracy) + " " + sensor);
     }
-
-//    Runnable mStatusChecker = new Runnable() {
-//        @Override
-//        public void run() {
-//            try {
-//                ArrayList<Map<Bluetooth.DataType, Object>> devices = Bluetooth.instance.getNearbyDevices();
-//
-//                for (Map<Bluetooth.DataType, Object> device: devices) {
-//                    //Log.d("Accelerometer", device.get(Bluetooth.DataType.DEVICE_NAME).toString());
-//                    //Log.d("Accelerometer", device.get(Bluetooth.DataType.AIR_PRESSURE).toString());
-//                    //Log.d("Accelerometer", String.valueOf(avgPressure));
-//
-//                    float remPressure = (float) device.get(Bluetooth.DataType.AIR_PRESSURE);
-//
-//
-//                    double diff = (remPressure - avgPressure) * pressureToDistanceConstant;
-//                    //Server.instance.sendDebug("Height Difference (m)", (float) diff);
-//                    //Log.d("Accelerometer", "Height Difference " + String.valueOf(diff));
-//                }
-//
-//                Bluetooth.instance.restart();
-//
-//            } finally {
-//                mHandler.postDelayed(mStatusChecker, 1000);
-//            }
-//        }
-//    };
 }

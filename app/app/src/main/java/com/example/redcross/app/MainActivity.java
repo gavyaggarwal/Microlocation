@@ -49,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Start Demo
         new TrilaterationDemo(this);
+
+        //Sensors.instance.setContext(this);
     }
 
 

@@ -1,11 +1,14 @@
 package com.example.redcross.app.demos;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.example.redcross.app.utils.Bluetooth;
 import com.example.redcross.app.utils.Device;
+import com.example.redcross.app.utils.MovingAverage;
 import com.example.redcross.app.utils.Sensors;
 import com.example.redcross.app.utils.Server;
 
@@ -19,6 +22,7 @@ import java.util.Map;
 public class TrilaterationDemo {
     private Handler mHandler = new Handler();
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public TrilaterationDemo(Context context) {
         Log.d("Trilateration", "Started");
 
@@ -54,7 +58,6 @@ public class TrilaterationDemo {
         }
 
         double eta = 0.01;
-        double confidence = 1.0;
 
         for (int i = 0; i < 1000; i++) {
             double error = 0;
@@ -66,6 +69,7 @@ public class TrilaterationDemo {
                 double dy = y - positions[j][1];
                 double dz = z - positions[j][2];
                 double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                double confidence = 1.0 / distances[j];
                 double distanceError = rad - distances[j];
                 gradx += 2 * confidence * distanceError / rad * dx;
                 grady += 2 * confidence * distanceError / rad * dy;
@@ -77,17 +81,19 @@ public class TrilaterationDemo {
             double dz = z - zold;
             double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
             if (rad != 0) {
-                gradx += 2 / rad * dx;
-                grady += 2 / rad * dy;
-                gradz += 2 / rad * dz;
+                // 0.1 is normalization constant
+                gradx += 0.1 * 2 / rad * dx;
+                grady += 0.1 * 2 / rad * dy;
+                gradz += 0.1 * 2 / rad * dz;
                 error += rad;
             }
-            grady += 2 * (y - ypres) * 10;   // Pressure is fairly accurate, give it a strong influence
+            grady += 2 * (y - ypres) * 3;   // Pressure is fairly accurate, give it a strong influence
 
             x -= gradx * eta;
             y -= grady * eta;
             z -= gradz * eta;
         }
+
         return new double[]{x, y, z};
     }
 
@@ -109,7 +115,9 @@ public class TrilaterationDemo {
                         positions[i][1] = ((Float)data.get(Bluetooth.DataType.Y_COORDINATE)).doubleValue();
                         positions[i][2] = ((Float)data.get(Bluetooth.DataType.Z_COORDINATE)).doubleValue();
 
-                        distances[i] = getDistance(((Float)data.get(Bluetooth.DataType.RSSI_VALUE)).doubleValue());
+                        MovingAverage rssi = (MovingAverage) data.get(Bluetooth.DataType.RSSI_VALUE);
+
+                        distances[i] = getDistance((double) rssi.average());
 
                         //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
                     }
@@ -130,15 +138,16 @@ public class TrilaterationDemo {
 
                     Log.d("Current Location", String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
 
+                    Bluetooth.instance.updateMessage();
 
-                    Server.instance.sendDebug("Anchored", 0);
+                    //Server.instance.sendDebug("Anchored", 0);
                 } else {
-                    Server.instance.sendDebug("Anchored", 1);
+                    //Server.instance.sendDebug("Anchored", 1);
                 }
                 Server.instance.sendLocation(Device.instance.x, Device.instance.y, Device.instance.z);
 
             } finally {
-                mHandler.postDelayed(mStatusChecker, 100);
+                mHandler.postDelayed(mStatusChecker, 50);
             }
         }
     };
