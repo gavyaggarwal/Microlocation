@@ -21,7 +21,7 @@ public class Device {
             case "ccf6cfbb8ceac04d":
                 id = "A";
                 color = "#FF6384";
-                x = -1;
+                x = -0.5f;
                 y = 0;
                 z = 0;
                 break;
@@ -30,12 +30,12 @@ public class Device {
                 color = "#36A2EB";
                 x = 0;
                 y = 0;
-                z = -1;
+                z = -0.5f;
                 break;
             case "720d0aad5060d35f":
                 id = "C";
                 color = "#FFCE56";
-                x = 1;
+                x = 0.5f;
                 y = 0;
                 z = 0;
                 break;
@@ -44,7 +44,7 @@ public class Device {
                 color = "#4BC0C0";
                 x = 0;
                 y = 0;
-                z = 1;
+                z = 0.5f;
                 break;
             case "756736212b3e81e6":
                 id = "E";
