@@ -20,7 +20,7 @@ import java.util.Queue;
 
 public class MovingAverage {
     int capacity;
-    long duration;
+    long duration; // milliseconds
     float sum;
     List<Entry> queue;
 
