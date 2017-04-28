@@ -31,22 +31,17 @@ public class MovingAverage {
     }
 
     public float average() {
-        long currentTime = System.nanoTime() / 1000000;
-
-        // first clear out unnecessary elements
-        long dt = currentTime - queue.get(0).ts;
-
-        while (dt >= duration) {
-            sum -= queue.get(0).val;
-            queue.remove(0);
-            dt = currentTime - queue.get(0).ts;
-        };
-
-//        for (int i=0; i < queue.size(); i++) {
-//            average += queue.get(i).val;
-//        }
-
         if (queue.size() != 0) {
+            // first clear out unnecessary elements
+            long currentTime = System.nanoTime() / 1000000;
+            long dt = currentTime - queue.get(0).ts;
+
+            while (dt >= duration) {
+                sum -= queue.get(0).val;
+                queue.remove(0);
+                dt = currentTime - queue.get(0).ts;
+            };
+
             return sum / queue.size();
         } else {
             return 0;

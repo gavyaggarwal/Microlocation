@@ -19,45 +19,18 @@ import android.util.Log;
 
 public class Server {
     public static Server instance = new Server();
-    private WebSocketClient client;
-    private boolean connectionOpen;
+    private static WebSocketClient client;
+    private static boolean connectionOpen;
     public String deviceID;
 
     public Server() {
-        URI uri;
-        try {
-            uri = new URI("ws://microlocation.herokuapp.com/messages");
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+        client = makeWebsocket();
+        if (client != null) {
+            client.connect();
+        } else {
             return;
         }
 
-        client = new WebSocketClient(uri) {
-            @Override
-            public void onOpen(ServerHandshake handshakedata) {
-                connectionOpen = true;
-                Log.i("Microlocation", "Socket Open");
-            }
-
-            @Override
-            public void onMessage(String message) {
-                Log.i("Microlocation", "Received Message on Socket: " + message);
-            }
-
-            @Override
-            public void onClose(int code, String reason, boolean remote) {
-                connectionOpen = false;
-                Log.i("Microlocation", "Socket Closed " + reason);
-            }
-
-            @Override
-            public void onError(Exception ex) {
-                connectionOpen = false;
-                Log.i("Microlocation", "Socket Error " + ex.getMessage());
-            }
-        };
-
-        client.connect();
     }
 
     public void sendLocation(float x, float y, float z) {
@@ -101,7 +74,8 @@ public class Server {
                     }
                     else {
                         if (connected == false) {
-//                            Server.instance.client.connect();
+                            client = makeWebsocket();
+                            client.connect();
                             Log.d(tag, "wifi connected, reconnect to server");
                             connected = true;
                         }
@@ -113,5 +87,40 @@ public class Server {
             }
         }
 
+    }
+
+    private static WebSocketClient makeWebsocket() {
+        URI uri;
+        try {
+            uri = new URI("ws://microlocation.herokuapp.com/messages");
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        return new WebSocketClient(uri) {
+            @Override
+            public void onOpen(ServerHandshake handshakedata) {
+                connectionOpen = true;
+                Log.i("Microlocation", "Socket Open");
+            }
+
+            @Override
+            public void onMessage(String message) {
+                Log.i("Microlocation", "Received Message on Socket: " + message);
+            }
+
+            @Override
+            public void onClose(int code, String reason, boolean remote) {
+                connectionOpen = false;
+                Log.i("Microlocation", "Socket Closed " + reason);
+            }
+
+            @Override
+            public void onError(Exception ex) {
+                connectionOpen = false;
+                Log.i("Microlocation", "Socket Error " + ex.getMessage());
+            }
+        };
     }
 }

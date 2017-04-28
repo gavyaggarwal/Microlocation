@@ -67,3 +67,5 @@ app/.cproject
 # PDT-specific
 app/.buildpath
 ~$rssi_data.xlsx
+~$
+~$dataCollection2.xlsx
