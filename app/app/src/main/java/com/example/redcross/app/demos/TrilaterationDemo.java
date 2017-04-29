@@ -118,6 +118,7 @@ public class TrilaterationDemo {
                         MovingAverage rssi = (MovingAverage) data.get(Bluetooth.DataType.RSSI_VALUE);
 
                         distances[i] = getDistance((double) rssi.average());
+                        Server.instance.sendDebug("Distance from" + String.valueOf(data.get(Bluetooth.DataType.DEVICE_NAME)), (float) distances[i]);
 
                         //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
                     }
