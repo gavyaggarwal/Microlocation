@@ -16,7 +16,6 @@
 
 #include <cstring>
 #include <cstdlib>
-#include <inttypes.h>
 #include "audio_recorder.h"
 /*
  * bqRecorderCallback(): called for every buffer is full;
@@ -37,23 +36,102 @@ void AudioRecorder::ProcessSLCallback(SLAndroidSimpleBufferQueueItf bq) {
     dataBuf->size_ = dataBuf->cap_;           //device only calls us when it is really full
     recQueue_->push(dataBuf);
 
-    int avg = 0;
+    double now = now_us();
+
     int samples = dataBuf->size_ / 2;
     int16_t *arr = (int16_t *) dataBuf->buf_;
+
+//    for (int i = 0; i < 256; ++i) {
+//        if (i < samples) {
+//            fftArray[i] = arr[i];
+//        } else {
+//            fftArray[i] = 0;
+//        }
+//    }
+//    CArray data(fftArray, 256);
+//    fft(data);
+//    int max = 0;
+//    double maxVal = -1;
+//    double khzVal = std::abs(data[107]);
+//    for (int i = 0; i < 256; ++i) {
+//        double res = std::abs(data[i]);
+//        if (res > maxVal) {
+//            max = i;
+//            maxVal = res;
+//        }
+//        //LOGW("Gavy Says Performed FFT (%f) in %s", res, __FUNCTION__);
+//    }
+//
+//    LOGW("Gavy Says Max FFT (%f, %d, %f) in %s", maxVal, max, khzVal, __FUNCTION__);
+
+
     for (int i = 0; i < samples; ++i) {
         int16_t val = arr[i];
-        if (val > 0)
-            avg += val;
-        else
-            avg -= val;
-    }
-    avg /= samples;
+        val = abs((int) val);
 
-    if (avg > 500) {
-        sharedData->endTime = now_us();
-        LOGW("Gavy Says Audio Received (%f) in %s", now_us(), __FUNCTION__);
-        LOGW("Gavy Says Latency (%f) in %s", sharedData->endTime - sharedData->startTime, __FUNCTION__);
+        double delta = ((double) (samples - i)) / 48000.0 * 1000000.0;
+        double endTime = now - delta;
+
+        if (!sharedData->isEchoer) {
+            if (val > 500 and sharedData->waitingForSelf) {
+                sharedData->endTime = endTime;
+                sharedData->waitingForSelf = false;
+                sharedData->selfLatency = sharedData->endTime - sharedData->startTime;
+                LOGW("Gavy Says Self Latency (%f), %f in %s", sharedData->selfLatency, delta, __FUNCTION__);
+                break;
+            } else if (val > 500 and sharedData->waitingForOther and endTime > sharedData->endTime + sharedData->selfLatency + 50000) {
+                sharedData->waitingForOther = false;
+                double otherLatency = endTime - sharedData->startTime;
+                double totalLatency = otherLatency - sharedData->selfLatency;
+                double distanceTerm = totalLatency * 0.0003436;
+                LOGW("Gavy Says Echo Latency (%f), %f in %s", otherLatency, delta, __FUNCTION__);
+                //LOGW("Gavy Says Distance Term (%f) in %s", distanceTerm, __FUNCTION__);
+
+
+                JNIEnv* env;
+                JavaVMAttachArgs args;
+                args.version = JNI_VERSION_1_6; // choose your JNI version
+                args.name = NULL; // you might want to give the java thread a name
+                args.group = NULL; // you might want to assign the java thread to a ThreadGroup
+                sharedData->jvm->AttachCurrentThread(&env, &args);
+                jclass jc = env->GetObjectClass(sharedData->clas);
+                jmethodID mid = env->GetMethodID(jc, "showDistance","(DD)V");
+                env->CallVoidMethod(sharedData->clas, mid, distanceTerm, totalLatency);
+
+                break;
+            }
+        } else {
+            if (val > 500 and sharedData->waitingForSelf) {
+                sharedData->endTime = endTime;
+                sharedData->waitingForSelf = false;
+                double currentLatency = sharedData->endTime - sharedData->startTime;
+                double totalLatency = sharedData->selfLatency + currentLatency;
+                double distanceTerm = totalLatency * 0.0003436;
+
+                LOGW("Gavy Says Distance Correction (%f) in %s", distanceTerm, __FUNCTION__);
+
+                JNIEnv* env;
+                JavaVMAttachArgs args;
+                args.version = JNI_VERSION_1_6; // choose your JNI version
+                args.name = NULL; // you might want to give the java thread a name
+                args.group = NULL; // you might want to assign the java thread to a ThreadGroup
+                sharedData->jvm->AttachCurrentThread(&env, &args);
+
+
+                jclass jc = env->GetObjectClass(sharedData->clas);
+                jmethodID mid = env->GetMethodID(jc, "showDistance","(DD)V");
+                env->CallVoidMethod(sharedData->clas, mid, distanceTerm, totalLatency);
+
+                break;
+            } else if (val > 500 and endTime > sharedData->startTime + 500000) {
+                // Assuming enough time has passed since last play
+                sharedData->startTime = endTime;
+                sharedData->play = true;
+                break;
+            }
+        }
     }
+
 
     sample_buf* freeBuf;
     while (freeQueue_->front(&freeBuf) && devShadowQueue_->push(freeBuf)) {

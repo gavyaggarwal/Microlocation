@@ -1,18 +1,3 @@
-/*
- * Copyright 2015 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 #include <cstdlib>
 #include "audio_player.h"
 
@@ -51,29 +36,39 @@ void AudioPlayer::ProcessSLCallback(SLAndroidSimpleBufferQueueItf bq) {
         }
         return;
     }
+
     devShadowQueue_->pop();
     buf->size_ = 0;
     freeQueue_->push(buf);
+    uint8_t *outputBuffer = blankBuffer;
     while(playQueue_->front(&buf) && devShadowQueue_->push(buf)) {
 
 
-        int samples = buf->size_ / 2;
-        int16_t *arr = (int16_t *) buf->buf_;
-        if (sharedData->play) {
-            for (int i = 0; i < samples; ++i) {
-                arr[i] = (int16_t) ((double) sin(2 * 3.14159 * i / 48) * 32767);
-            }
-            sharedData->play = false;
+        if (sharedData->isEchoer == false) {
+            if (sharedData->play) {
+                outputBuffer = soundBuffer;
+                sharedData->play = false;
+                sharedData->waitingForSelf = true;
+                sharedData->waitingForOther = true;
 
-            LOGW("Gavy Says Audio Sent (%f) in %s", now_us(), __FUNCTION__);
-            sharedData->startTime = now_us();
+                //LOGW("Gavy Says Audio Sent (%f) in %s", now_us(), __FUNCTION__);
+                sharedData->startTime = now_us();
+            }
         } else {
-            for (int i = 0; i < samples; ++i) {
-                arr[i] = 0;
+            double now = now_us();
+            if (sharedData->play and now > sharedData->startTime + 50000) {
+                outputBuffer = soundBuffer;
+                sharedData->play = false;
+                sharedData->waitingForSelf = true;
+                sharedData->selfLatency = now - sharedData->startTime;
+                //LOGW("Gavy Says Echo Process Latency (%f) in %s", sharedData->selfLatency, __FUNCTION__);
+
+                //LOGW("Gavy Says Audio Sent (%f) in %s", now_us(), __FUNCTION__);
+                sharedData->startTime = now;
             }
         }
 
-        (*bq)->Enqueue(bq, buf->buf_, buf->size_);
+        (*bq)->Enqueue(bq, outputBuffer, sharedData->bufferSize);
         playQueue_->pop();
     }
 }
@@ -141,6 +136,25 @@ AudioPlayer::AudioPlayer(SampleFormat *sampleFormat, SLEngineItf slEngine, Share
     assert(devShadowQueue_);
 
     sharedData = sd;
+    soundBuffer = (uint8_t *) malloc(sharedData->bufferSize);
+    blankBuffer = (uint8_t *) malloc(sharedData->bufferSize);
+
+    LOGW("Gavy Says Initializing Buffers (%d) in %s", sharedData->bufferSize, __FUNCTION__);
+
+    int samples = sharedData->bufferSize / 2;
+    int16_t *sound = (int16_t *) soundBuffer;
+    int16_t *blank = (int16_t *) blankBuffer;
+    if (sharedData->isEchoer) {
+        for (int i = 0; i < samples; ++i) {
+            sound[i] = (int16_t) (cos(2 * PI * i / 48000 * ECHO_MODE_FREQUENCY) * 32767);
+            blank[i] = 0;
+        }
+    } else {
+        for (int i = 0; i < samples; ++i) {
+            sound[i] = (int16_t) (cos(2 * PI * i / 48000 * MAIN_MODE_FREQUENCY) * 32767);
+            blank[i] = 0;
+        }
+    }
 
 #ifdef  ENABLE_LOG
     std::string name = "play";
@@ -162,6 +176,9 @@ AudioPlayer::~AudioPlayer() {
     if (outputMixObjectItf_) {
         (*outputMixObjectItf_)->Destroy(outputMixObjectItf_);
     }
+
+    free(soundBuffer);
+    free(blankBuffer);
 }
 
 void AudioPlayer::SetBufQueue(AudioQueue *playQ, AudioQueue *freeQ) {

@@ -11,15 +11,17 @@
         android:layout_height="wrap_content"
         android:text="@string/StartEcho"
         android:onClick="startEcho" />
+
     <Button
         android:id="@+id/button_stop_capture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/StopEcho"
-        android:onClick="stopEcho"
-        android:layout_toEndOf="@+id/button_start_capture"
         android:layout_alignBottom="@+id/button_start_capture"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:layout_toEndOf="@+id/button_start_capture"
+        android:onClick="stopEcho"
+        android:soundEffectsEnabled="false"
+        android:text="@string/StopEcho" />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

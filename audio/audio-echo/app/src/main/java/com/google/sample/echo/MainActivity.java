@@ -57,23 +57,6 @@ public class MainActivity extends Activity
             createSLEngine(Integer.parseInt(nativeSampleRate), Integer.parseInt(nativeSampleBufSize));
         }
         isPlaying = false;
-
-
-        if(!supportRecording || isPlaying) {
-            return;
-        }
-        if(!createSLBufferQueueAudioPlayer()) {
-            status_view.setText("Failed to create Audio Player");
-            return;
-        }
-        if(!createAudioRecorder()) {
-            deleteSLBufferQueueAudioPlayer();
-            status_view.setText("Failed to create Audio Recorder");
-            return;
-        }
-        startPlay();   //this must include startRecording()
-        isPlaying = true;
-        status_view.setText("Engine Echoing ....");
     }
     @Override
     protected void onDestroy() {
@@ -110,7 +93,21 @@ public class MainActivity extends Activity
     }
 
     private void startEcho() {
-        playNoise();
+        if(!supportRecording || isPlaying) {
+            return;
+        }
+        if(!createSLBufferQueueAudioPlayer()) {
+            status_view.setText("Failed to create Audio Player");
+            return;
+        }
+        if(!createAudioRecorder()) {
+            deleteSLBufferQueueAudioPlayer();
+            status_view.setText("Failed to create Audio Recorder");
+            return;
+        }
+        startPlay();   //this must include startRecording()
+        isPlaying = true;
+        status_view.setText("Engine Echoing ....");
     }
     public void startEcho(View view) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
@@ -126,14 +123,23 @@ public class MainActivity extends Activity
     }
 
     public void stopEcho(View view) {
-        if(!supportRecording || !isPlaying) {
-            return;
-        }
-        stopPlay();  //this must include stopRecording()
-        updateNativeAudioUI();
-        deleteSLBufferQueueAudioPlayer();
-        deleteAudioRecorder();
-        isPlaying = false;
+        playNoise(false, this);
+//        if(!supportRecording || !isPlaying) {
+//            return;
+//        }
+//        stopPlay();  //this must include stopRecording()
+//        updateNativeAudioUI();
+//        deleteSLBufferQueueAudioPlayer();
+//        deleteAudioRecorder();
+//        isPlaying = false;
+    }
+    private void showDistance(final double distance, final double latency) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                status_view.setText("Distance = " + String.valueOf(distance) + " m\n" + "Latency = " + String.valueOf(latency / 1000) + " ms\n");
+            }
+        });
     }
     public void getLowLatencyParameters(View view) {
         updateNativeAudioUI();
@@ -227,5 +233,5 @@ public class MainActivity extends Activity
     public static native void startPlay();
     public static native void stopPlay();
 
-    public static native void playNoise();
+    public static native void playNoise(boolean isEchoer, MainActivity cb);
 }

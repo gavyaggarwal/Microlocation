@@ -68,7 +68,7 @@ JNIEXPORT void JNICALL
         Java_com_google_sample_echo_MainActivity_stopPlay(JNIEnv *env, jclass type);
 
 JNIEXPORT void JNICALL
-        Java_com_google_sample_echo_MainActivity_playNoise(JNIEnv *env, jclass type);
+        Java_com_google_sample_echo_MainActivity_playNoise(JNIEnv *env, jclass, jboolean, jobject);
 
 }
 
@@ -112,11 +112,15 @@ Java_com_google_sample_echo_MainActivity_createSLEngine(
         engine.freeBufQueue_->push(&engine.bufs_[i]);
     }
 
-    engine.sharedData        = (SharedData *) malloc(sizeof(SharedData));
+    engine.sharedData = (SharedData *) malloc(sizeof(SharedData));
     engine.sharedData->play = false;
+    engine.sharedData->waitingForSelf = false;
+    engine.sharedData->waitingForOther = false;
     engine.sharedData->startTime = 0;
     engine.sharedData->endTime = 0;
+    engine.sharedData->selfLatency = 0;
     engine.sharedData->bufferSize = bufSize;
+    engine.sharedData->isEchoer = false;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -212,12 +216,16 @@ Java_com_google_sample_echo_MainActivity_deleteSLEngine(JNIEnv *env, jclass type
         engine.slEngineItf_ = NULL;
     }
 
+    env->DeleteGlobalRef(engine.sharedData->clas);
     free(engine.sharedData);
 }
 
 JNIEXPORT void JNICALL
-Java_com_google_sample_echo_MainActivity_playNoise(JNIEnv *env, jclass type) {
+Java_com_google_sample_echo_MainActivity_playNoise(JNIEnv *env, jclass type, jboolean isEchoer, jobject classref) {
+    env->GetJavaVM(&(engine.sharedData->jvm));
+    engine.sharedData->clas = env->NewGlobalRef(classref);
     engine.sharedData->play = true;
+    engine.sharedData->isEchoer = (bool) isEchoer;
 }
 
 uint32_t dbgEngineGetBufCount(void) {

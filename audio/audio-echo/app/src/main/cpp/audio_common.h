@@ -18,6 +18,9 @@
 #ifndef NATIVE_AUDIO_AUDIO_COMMON_H
 #define NATIVE_AUDIO_AUDIO_COMMON_H
 
+#include <complex>
+#include <iostream>
+#include <valarray>
 #include <time.h>
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
@@ -25,6 +28,7 @@
 #include "android_debug.h"
 #include "debug_utils.h"
 #include "buf_manager.h"
+#include "../../../../../../../../../../Android/sdk/ndk-bundle/platforms/android-21/arch-x86/usr/include/jni.h"
 
 /*
  * Audio Sample Controls...
@@ -40,11 +44,23 @@
 #define BUF_COUNT                           16
 
 
+const double PI = 3.141592653589793238460;
+
+typedef std::complex<double> Complex;
+typedef std::valarray<Complex> CArray;
+
+
 struct SharedData {
-    bool         play;
-    double       startTime;
-    double       endTime;
-    uint32_t     bufferSize;
+    bool        play;
+    bool        waitingForSelf;
+    bool        waitingForOther;
+    double      startTime;
+    double      endTime;
+    double      selfLatency;
+    uint32_t    bufferSize;
+    bool        isEchoer;
+    JavaVM*     jvm;
+    jobject     clas;
 };
 
 struct SampleFormat {
@@ -59,6 +75,7 @@ struct SampleFormat {
 
 
 extern double now_us(void);
+extern void fft(CArray& x);
 
 extern void ConvertToSLSampleFormat(SLAndroidDataFormat_PCM_EX *pFormat,
                                     SampleFormat* format);
