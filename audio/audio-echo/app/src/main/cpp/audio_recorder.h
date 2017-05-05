@@ -20,6 +20,7 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 #include <time.h>
+#include <stdlib.h>
 #include "audio_common.h"
 #include "buf_manager.h"
 #include "debug_utils.h"
@@ -39,6 +40,8 @@ class AudioRecorder {
     void           *ctx_;
 
     SharedData  *sharedData;
+
+    Complex fftArray[256];
 public:
     explicit AudioRecorder(SampleFormat *, SLEngineItf engineEngine, SharedData *sd);
     ~AudioRecorder();

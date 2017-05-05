@@ -18,9 +18,13 @@
 #define NATIVE_AUDIO_AUDIO_PLAYER_H
 #include <sys/types.h>
 #include <math.h>
+#include <jni.h>
 #include "audio_common.h"
 #include "buf_manager.h"
 #include "debug_utils.h"
+
+#define MAIN_MODE_FREQUENCY 20.0625     // Corresponds to 107 in FFT buffer
+#define ECHO_MODE_FREQUENCY 20.8125     // Corresponds to 111 in FFT buffer
 
 class AudioPlayer {
     // buffer queue player interfaces
@@ -38,6 +42,8 @@ class AudioPlayer {
     void           *ctx_;
 
     SharedData *sharedData;
+    uint8_t *soundBuffer;
+    uint8_t *blankBuffer;
 
 #ifdef  ENABLE_LOG
     AndroidLog  *logFile_;
