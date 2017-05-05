@@ -86,7 +86,11 @@ app.ws('/socket', function(ws, req) {
 
 app.ws('/messages', function(ws) {
   ws.on('message', function(msg) {
-    addData(JSON.parse(msg));
+    try {
+      addData(JSON.parse(msg));
+    } catch(err) {
+      console.log("not JSON")
+    }
     console.log(JSON.stringify(rawData));
   });
 });

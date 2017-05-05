@@ -153,7 +153,7 @@ public class TrilaterationDemo {
             try {
                 String freeDevice = "E";
                 double y_barometer = Sensors.instance.estimatedHeight();
-                Server.instance.sendDebug("Estimated Height Change", (float) y_barometer);
+                //Server.instance.sendDebug("Estimated Height Change", (float) y_barometer);
                 if (Device.instance.id.equals(freeDevice)) {
                     ArrayList<Map<Bluetooth.DataType, Object>> devices = Bluetooth.instance.getNearbyDevices();
                     double[][] positions = new double[devices.size()][3];
@@ -170,7 +170,7 @@ public class TrilaterationDemo {
 
                         distances[i] = getDistance((double) rssi.average());
                         Log.d("CurDis", "Distance from " + String.valueOf(data.get(Bluetooth.DataType.DEVICE_NAME)) + ": " + String.valueOf((float) distances[i]));
-                        Server.instance.sendDebug("Distance from " + String.valueOf(data.get(Bluetooth.DataType.DEVICE_NAME)), (float) distances[i]);
+                        //Server.instance.sendDebug("Distance from " + String.valueOf(data.get(Bluetooth.DataType.DEVICE_NAME)), (float) distances[i]);
 
                         //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
                     }
