@@ -13,6 +13,7 @@ import com.example.redcross.app.utils.Sensors;
 import com.example.redcross.app.utils.Server;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -97,6 +98,55 @@ public class TrilaterationDemo {
         return new double[]{x, y, z};
     }
 
+    public ArrayList<ArrayList<Integer>> combine(int n, int k) {
+        ArrayList<ArrayList<Integer>> result = new ArrayList<ArrayList<Integer>>();
+
+        if (n <= 0 || n < k)
+            return result;
+
+        ArrayList<Integer> item = new ArrayList<Integer>();
+        dfs(n, k, 1, item, result); // because it need to begin from 1
+
+        return result;
+    }
+
+    private void dfs(int n, int k, int start, ArrayList<Integer> item,
+                     ArrayList<ArrayList<Integer>> res) {
+        if (item.size() == k) {
+            res.add(new ArrayList<Integer>(item));
+            return;
+        }
+
+        for (int i = start; i <= n; i++) {
+            item.add(i);
+            dfs(n, k, i + 1, item, res);
+            item.remove(item.size() - 1);
+        }
+    }
+
+    public Map<String, Object> getSubset(double[][] positions, double[] distances, ArrayList<Integer> indices) {
+
+        double[] d = new double[3];
+        double[][] p = new double[3][3];
+        Map<String, Object> res = new HashMap<String, Object>();
+
+        int j = 0;
+        for (int i = 0; i < distances.length; i++) {
+            if (indices.contains(i+1)) {
+                p[j] = positions[i];
+                d[j] = distances[i];
+                j++;
+            }
+            if(j == 3) {
+                res.put("pos", p);
+                res.put("dis", d);
+                return res;
+            }
+        }
+
+        return res;
+    }
+
     Runnable mStatusChecker = new Runnable() {
         @Override
         public void run() {
@@ -118,7 +168,8 @@ public class TrilaterationDemo {
                         MovingAverage rssi = (MovingAverage) data.get(Bluetooth.DataType.RSSI_VALUE);
 
                         distances[i] = getDistance((double) rssi.average());
-                        Server.instance.sendDebug("Distance from" + String.valueOf(data.get(Bluetooth.DataType.DEVICE_NAME)), (float) distances[i]);
+                        Log.d("CurDis", "Distance from " + String.valueOf(data.get(Bluetooth.DataType.DEVICE_NAME)) + ": " + String.valueOf((float) distances[i]));
+                        Server.instance.sendDebug("Distance from " + String.valueOf(data.get(Bluetooth.DataType.DEVICE_NAME)), (float) distances[i]);
 
                         //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
                     }
@@ -131,13 +182,36 @@ public class TrilaterationDemo {
                     //double[] centroid = optimum.getPoint().toArray();
                     double[] centroid = performTrilateration(positions, distances, Device.instance.x, Device.instance.y, Device.instance.z, y_barometer);
 
+                    ArrayList<ArrayList<Integer>> combs = combine(devices.size(), 3);
+                    double[][] centroids = new double[combs.size()][3];
+
+                    if (devices.size() > 3) {
+
+                        double[] avgCentroid = new double[3];
+                        int idx = 0;
+                        double[][] p = new double[3][3];
+                        double[] d = new double[3];
+                        Map<String, Object> res = new HashMap<>();
+                        for (ArrayList<Integer> comb : combs) {
+                            res = getSubset(positions, distances, comb);
+                            centroids[idx] = performTrilateration((double[][]) res.get("pos"), (double[]) res.get("dis"), Device.instance.x, Device.instance.y, Device.instance.z, y_barometer);
+                        }
+                        for (int i = 0; i < 3; i++) {
+                            double sum = 0;
+                            for (int j=0; j < combs.size(); j++) {
+                                sum += centroids[j][i];
+                            }
+                            avgCentroid[i] = sum/combs.size();
+                        }
+                        Log.d("Location", "Averaged:" + String.valueOf(avgCentroid[0]) + " " + String.valueOf(avgCentroid[1]) + " " + String.valueOf(avgCentroid[2]));
+                    }
 
 
                     Device.instance.x = (float) centroid[0];
                     Device.instance.y = (float) centroid[1];
                     Device.instance.z = (float) centroid[2];
 
-                    Log.d("Current Location", String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
+                    Log.d("Location", "Current: " + String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
 
                     Bluetooth.instance.updateMessage();
 
