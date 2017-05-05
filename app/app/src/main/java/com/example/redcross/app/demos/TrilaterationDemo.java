@@ -151,9 +151,10 @@ public class TrilaterationDemo {
         @Override
         public void run() {
             try {
+                String freeDevice = "E";
                 double y_barometer = Sensors.instance.estimatedHeight();
                 Server.instance.sendDebug("Estimated Height Change", (float) y_barometer);
-                if (Sensors.instance.getIsMoving() == true) {
+                if (Device.instance.id.equals(freeDevice)) {
                     ArrayList<Map<Bluetooth.DataType, Object>> devices = Bluetooth.instance.getNearbyDevices();
                     double[][] positions = new double[devices.size()][3];
                     double[] distances = new double[devices.size()];
