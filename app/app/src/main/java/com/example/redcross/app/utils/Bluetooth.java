@@ -33,6 +33,7 @@ public class Bluetooth {
     private static final short APP_ID = 12124;
     private static final int SCAN_AGE_LIMIT = 1; // in seconds
     private static final byte MESSAGE_SIZE = 13;
+    private long updateTime = 0;
     private BluetoothLeAdvertiser advertiser;
     private BluetoothLeScanner scanner;
 
@@ -94,8 +95,11 @@ public class Bluetooth {
     }
 
     public void updateMessage() {
-        stopAdvertising();
-        startAdvertising();
+        if (System.currentTimeMillis() - updateTime > 1000) {
+            stopAdvertising();
+            startAdvertising();
+            updateTime = System.currentTimeMillis();
+        }
     }
 
     private byte[] createMessage() {
