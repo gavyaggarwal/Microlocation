@@ -38,12 +38,10 @@
 /*
  * Sample Buffer Controls...
  */
-#define RECORD_DEVICE_KICKSTART_BUF_COUNT   2
 #define PLAY_KICKSTART_BUFFER_COUNT         3
 #define DEVICE_SHADOW_BUFFER_QUEUE_LEN      4
-#define BUF_COUNT                           16
 
-
+#define NUM_RECORDING_BUFS 4
 const double PI = 3.141592653589793238460;
 
 typedef std::complex<double> Complex;
@@ -65,7 +63,6 @@ struct SharedData {
 
 struct SampleFormat {
     uint32_t   sampleRate_;
-    uint32_t   framesPerBuf_;
     uint16_t   channels_;
     uint16_t   pcmFormat_;          //8 bit, 16 bit, 24 bit ...
     uint32_t   representation_;     //android extensions

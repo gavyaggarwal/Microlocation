@@ -24,6 +24,7 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -35,7 +36,11 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity
         implements ActivityCompat.OnRequestPermissionsResultCallback {
+    private Handler mHandler = new Handler();
+
     private static final int AUDIO_ECHO_REQUEST = 0;
+
+    private static final boolean isEchoer = true;
 
     TextView status_view;
     String  nativeSampleRate;
@@ -57,6 +62,11 @@ public class MainActivity extends Activity
             createSLEngine(Integer.parseInt(nativeSampleRate), Integer.parseInt(nativeSampleBufSize));
         }
         isPlaying = false;
+
+        Bluetooth.instance.deviceID = 'A';
+        Bluetooth.instance.start();
+
+        mStatusChecker.run();
     }
     @Override
     protected void onDestroy() {
@@ -110,11 +120,15 @@ public class MainActivity extends Activity
         status_view.setText("Engine Echoing ....");
     }
     public void startEcho(View view) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) !=
                                                PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                     this,
                     new String[] { Manifest.permission.RECORD_AUDIO },
+                    AUDIO_ECHO_REQUEST);
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[] { Manifest.permission.ACCESS_COARSE_LOCATION },
                     AUDIO_ECHO_REQUEST);
             status_view.setText("Requesting RECORD_AUDIO Permission...");
             return;
@@ -123,7 +137,7 @@ public class MainActivity extends Activity
     }
 
     public void stopEcho(View view) {
-        playNoise(false, this);
+        playNoise(isEchoer, this);
 //        if(!supportRecording || !isPlaying) {
 //            return;
 //        }
@@ -137,7 +151,10 @@ public class MainActivity extends Activity
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                status_view.setText("Distance = " + String.valueOf(distance) + " m\n" + "Latency = " + String.valueOf(latency / 1000) + " ms\n");
+                //status_view.setText("Distance = " + String.valueOf(distance) + " m\n" + "Latency = " + String.valueOf(latency / 1000) + " ms\n");
+
+                Bluetooth.instance.myLatency = latency;
+                Bluetooth.instance.updateMessage();
             }
         });
     }
@@ -211,6 +228,27 @@ public class MainActivity extends Activity
         // The callback runs on app's thread, so we are safe to resume the action
         startEcho();
     }
+
+    Runnable mStatusChecker = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                double distance;
+                if (!isEchoer) {
+                    distance = (Bluetooth.instance.myLatency - Bluetooth.instance.theirLatency) * 0.0003436;
+                } else {
+                    distance = (Bluetooth.instance.theirLatency - Bluetooth.instance.myLatency) * 0.0003436;
+                }
+                status_view.setText("Distance = " + String.valueOf(distance) + " m\n");
+
+
+            } finally {
+                mHandler.postDelayed(mStatusChecker, 50);
+            }
+        }
+    };
+
+
 
     /*
      * Loading our Libs

@@ -34,9 +34,6 @@ class AudioPlayer {
     SLAndroidSimpleBufferQueueItf playBufferQueueItf_;
 
     SampleFormat sampleInfo_;
-    AudioQueue *freeQueue_;       // user
-    AudioQueue *playQueue_;       // user
-    AudioQueue *devShadowQueue_;  // owner
 
     ENGINE_CALLBACK callback_;
     void           *ctx_;
@@ -51,11 +48,9 @@ class AudioPlayer {
 public:
     explicit AudioPlayer(SampleFormat *sampleFormat, SLEngineItf engine, SharedData *sd);
     ~AudioPlayer();
-    void        SetBufQueue(AudioQueue *playQ, AudioQueue *freeQ);
     SLresult    Start(void);
     void        Stop(void);
     void        ProcessSLCallback(SLAndroidSimpleBufferQueueItf bq);
-    uint32_t    dbgGetDevBufCount(void);
     void        PlayAudioBuffers(int32_t count);
     void        RegisterCallback(ENGINE_CALLBACK cb, void *ctx);
 };

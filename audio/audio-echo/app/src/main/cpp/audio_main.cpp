@@ -35,12 +35,6 @@ struct EchoAudioEngine {
 
     AudioRecorder  *recorder_;
     AudioPlayer    *player_;
-    AudioQueue     *freeBufQueue_;    //Owner of the queue
-    AudioQueue     *recBufQueue_;     //Owner of the queue
-
-    sample_buf  *bufs_;
-    uint32_t     bufCount_;
-    uint32_t     frameCount_;
 
     SharedData  *sharedData;
 };
@@ -101,18 +95,10 @@ Java_com_google_sample_echo_MainActivity_createSLEngine(
     uint32_t bufSize = engine.fastPathFramesPerBuf_ * engine.sampleChannels_
                        * engine.bitsPerSample_;
     bufSize = (bufSize + 7) >> 3;            // bits --> byte
-    engine.bufCount_ = BUF_COUNT;
-    engine.bufs_ = allocateSampleBufs(engine.bufCount_, bufSize);
-    assert(engine.bufs_);
 
-    engine.freeBufQueue_ = new AudioQueue (engine.bufCount_);
-    engine.recBufQueue_  = new AudioQueue (engine.bufCount_);
-    assert(engine.freeBufQueue_ && engine.recBufQueue_);
-    for(uint32_t i=0; i<engine.bufCount_; i++) {
-        engine.freeBufQueue_->push(&engine.bufs_[i]);
-    }
 
     engine.sharedData = (SharedData *) malloc(sizeof(SharedData));
+    assert(engine.sharedData);
     engine.sharedData->play = false;
     engine.sharedData->waitingForSelf = false;
     engine.sharedData->waitingForOther = false;
@@ -128,7 +114,6 @@ Java_com_google_sample_echo_MainActivity_createSLBufferQueueAudioPlayer(JNIEnv *
     SampleFormat sampleFormat;
     memset(&sampleFormat, 0, sizeof(sampleFormat));
     sampleFormat.pcmFormat_ = (uint16_t)engine.bitsPerSample_;
-    sampleFormat.framesPerBuf_ = engine.fastPathFramesPerBuf_;
 
     // SampleFormat.representation_ = SL_ANDROID_PCM_REPRESENTATION_SIGNED_INT;
     sampleFormat.channels_ = (uint16_t)engine.sampleChannels_;
@@ -139,7 +124,6 @@ Java_com_google_sample_echo_MainActivity_createSLBufferQueueAudioPlayer(JNIEnv *
     if(engine.player_ == nullptr)
         return JNI_FALSE;
 
-    engine.player_->SetBufQueue(engine.recBufQueue_, engine.freeBufQueue_);
     engine.player_->RegisterCallback(EngineService, (void*)&engine);
 
     return JNI_TRUE;
@@ -162,12 +146,10 @@ Java_com_google_sample_echo_MainActivity_createAudioRecorder(JNIEnv *env, jclass
     // SampleFormat.representation_ = SL_ANDROID_PCM_REPRESENTATION_SIGNED_INT;
     sampleFormat.channels_ = engine.sampleChannels_;
     sampleFormat.sampleRate_ = engine.fastPathSampleRate_;
-    sampleFormat.framesPerBuf_ = engine.fastPathFramesPerBuf_;
     engine.recorder_ = new AudioRecorder(&sampleFormat, engine.slEngineItf_, engine.sharedData);
     if(!engine.recorder_) {
         return JNI_FALSE;
     }
-    engine.recorder_->SetBufQueues(engine.freeBufQueue_, engine.recBufQueue_);
     engine.recorder_->RegisterCallback(EngineService, (void*)&engine);
     return JNI_TRUE;
 }
@@ -182,8 +164,6 @@ Java_com_google_sample_echo_MainActivity_deleteAudioRecorder(JNIEnv *env, jclass
 
 JNIEXPORT void JNICALL
 Java_com_google_sample_echo_MainActivity_startPlay(JNIEnv *env, jclass type) {
-
-    engine.frameCount_  = 0;
     /*
      * start player: make it into waitForData state
      */
@@ -207,9 +187,6 @@ Java_com_google_sample_echo_MainActivity_stopPlay(JNIEnv *env, jclass type) {
 
 JNIEXPORT void JNICALL
 Java_com_google_sample_echo_MainActivity_deleteSLEngine(JNIEnv *env, jclass type) {
-    delete engine.recBufQueue_;
-    delete engine.freeBufQueue_;
-    releaseSampleBufs(engine.bufs_, engine.bufCount_);
     if (engine.slEngineObj_ != NULL) {
         (*engine.slEngineObj_)->Destroy(engine.slEngineObj_);
         engine.slEngineObj_ = NULL;
@@ -228,25 +205,6 @@ Java_com_google_sample_echo_MainActivity_playNoise(JNIEnv *env, jclass type, jbo
     engine.sharedData->isEchoer = (bool) isEchoer;
 }
 
-uint32_t dbgEngineGetBufCount(void) {
-    uint32_t count = engine.player_->dbgGetDevBufCount();
-    count += engine.recorder_->dbgGetDevBufCount();
-    count += engine.freeBufQueue_->size();
-    count += engine.recBufQueue_->size();
-
-    LOGE("Buf Disrtibutions: PlayerDev=%d, RecDev=%d, FreeQ=%d, "
-                 "RecQ=%d",
-         engine.player_->dbgGetDevBufCount(),
-         engine.recorder_->dbgGetDevBufCount(),
-         engine.freeBufQueue_->size(),
-         engine.recBufQueue_->size());
-    if(count != engine.bufCount_) {
-        LOGE("====Lost Bufs among the queue(supposed = %d, found = %d)",
-             BUF_COUNT, count);
-    }
-    return count;
-}
-
 /*
  * simple message passing for player/recorder to communicate with engine
  */
@@ -258,9 +216,9 @@ bool EngineService(void* ctx, uint32_t msg, void* data ) {
             // we only allow it to call once, so tell caller do not call
             // anymore
             return false;
-        case ENGINE_SERVICE_MSG_RETRIEVE_DUMP_BUFS:
-            *(static_cast<uint32_t*>(data)) = dbgEngineGetBufCount();
-            break;
+//        case ENGINE_SERVICE_MSG_RETRIEVE_DUMP_BUFS:
+//            *(static_cast<uint32_t*>(data)) = dbgEngineGetBufCount();
+//            break;
         default:
             assert(false);
             return false;

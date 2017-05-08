@@ -31,9 +31,6 @@ class AudioRecorder {
     SLAndroidSimpleBufferQueueItf recBufQueueItf_;
 
     SampleFormat  sampleInfo_;
-    AudioQueue *freeQueue_;         // user
-    AudioQueue *recQueue_;          // user
-    AudioQueue *devShadowQueue_;    // owner
     uint32_t    audioBufCount;
 
     ENGINE_CALLBACK callback_;
@@ -42,16 +39,17 @@ class AudioRecorder {
     SharedData  *sharedData;
 
     Complex fftArray[256];
+
+    uint8_t currentBuffer;
+    uint8_t **buffers;
 public:
     explicit AudioRecorder(SampleFormat *, SLEngineItf engineEngine, SharedData *sd);
     ~AudioRecorder();
     SLboolean Start(void);
     SLboolean Stop(void);
-    void      SetBufQueues(AudioQueue *freeQ, AudioQueue *recQ);
-    void      ProcessSLCallback(SLAndroidSimpleBufferQueueItf bq);
+    void      ProcessSLCallback(SLAndroidSimpleBufferQueueItf bq, double time);
     void      RegisterCallback(ENGINE_CALLBACK cb, void *ctx);
-    int32_t   dbgGetDevBufCount(void);
-
+    void      SendResult(double latency);
 #ifdef  ENABLE_LOG
     AndroidLog *recLog_;
 #endif

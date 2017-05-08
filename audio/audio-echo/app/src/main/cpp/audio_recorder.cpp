@@ -1,19 +1,3 @@
-/*
- * Copyright 2015 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #include <cstring>
 #include <cstdlib>
 #include "audio_recorder.h"
@@ -22,108 +6,76 @@
  *                       pass directly to handler
  */
 void bqRecorderCallback(SLAndroidSimpleBufferQueueItf bq, void *rec) {
-    (static_cast<AudioRecorder *>(rec))->ProcessSLCallback(bq);
+    double now = now_us();
+    (static_cast<AudioRecorder *>(rec))->ProcessSLCallback(bq, now);
 }
 
-void AudioRecorder::ProcessSLCallback(SLAndroidSimpleBufferQueueItf bq) {
+void AudioRecorder::ProcessSLCallback(SLAndroidSimpleBufferQueueItf bq, double time) {
 #ifdef ENABLE_LOG
     recLog_->logTime();
 #endif
     assert(bq == recBufQueueItf_);
-    sample_buf *dataBuf = NULL;
-    devShadowQueue_->front(&dataBuf);
-    devShadowQueue_->pop();
-    dataBuf->size_ = dataBuf->cap_;           //device only calls us when it is really full
-    recQueue_->push(dataBuf);
+    uint8_t *buffer = buffers[currentBuffer];
 
-    double now = now_us();
+//    LOGW("Gavy Says Recording in %s", __FUNCTION__);
 
-    int samples = dataBuf->size_ / 2;
-    int16_t *arr = (int16_t *) dataBuf->buf_;
+    int samples = sharedData->bufferSize / 2;
+    int16_t *arr = (int16_t *) buffer;
 
-//    for (int i = 0; i < 256; ++i) {
-//        if (i < samples) {
-//            fftArray[i] = arr[i];
-//        } else {
-//            fftArray[i] = 0;
-//        }
-//    }
-//    CArray data(fftArray, 256);
-//    fft(data);
-//    int max = 0;
-//    double maxVal = -1;
-//    double khzVal = std::abs(data[107]);
-//    for (int i = 0; i < 256; ++i) {
-//        double res = std::abs(data[i]);
-//        if (res > maxVal) {
-//            max = i;
-//            maxVal = res;
-//        }
-//        //LOGW("Gavy Says Performed FFT (%f) in %s", res, __FUNCTION__);
-//    }
-//
-//    LOGW("Gavy Says Max FFT (%f, %d, %f) in %s", maxVal, max, khzVal, __FUNCTION__);
+    double start = now_us();
+    for (int i = 0; i < 256; ++i) {
+        if (i < samples) {
+            fftArray[i] = arr[i];
+        } else {
+            fftArray[i] = 0;
+        }
+    }
+    CArray data(fftArray, 256);
+    fft(data);
+    double khzVal = std::abs(data[107]);
+
+    LOGW("Gavy Says Max FFT (%f, %f) in %s", khzVal, now_us() - start, __FUNCTION__);
 
 
     for (int i = 0; i < samples; ++i) {
         int16_t val = arr[i];
         val = abs((int) val);
 
+
+        if (val < 500) {
+            continue;
+        }
+
         double delta = ((double) (samples - i)) / 48000.0 * 1000000.0;
-        double endTime = now - delta;
+        double endTime = time - delta;
 
         if (!sharedData->isEchoer) {
-            if (val > 500 and sharedData->waitingForSelf) {
+            if (sharedData->waitingForSelf) {
                 sharedData->endTime = endTime;
                 sharedData->waitingForSelf = false;
                 sharedData->selfLatency = sharedData->endTime - sharedData->startTime;
                 LOGW("Gavy Says Self Latency (%f), %f in %s", sharedData->selfLatency, delta, __FUNCTION__);
                 break;
-            } else if (val > 500 and sharedData->waitingForOther and endTime > sharedData->endTime + sharedData->selfLatency + 50000) {
+            } else if (sharedData->waitingForOther and endTime > sharedData->endTime + sharedData->selfLatency + 50000) {
                 sharedData->waitingForOther = false;
                 double otherLatency = endTime - sharedData->startTime;
                 double totalLatency = otherLatency - sharedData->selfLatency;
-                double distanceTerm = totalLatency * 0.0003436;
-                LOGW("Gavy Says Echo Latency (%f), %f in %s", otherLatency, delta, __FUNCTION__);
-                //LOGW("Gavy Says Distance Term (%f) in %s", distanceTerm, __FUNCTION__);
 
-
-                JNIEnv* env;
-                JavaVMAttachArgs args;
-                args.version = JNI_VERSION_1_6; // choose your JNI version
-                args.name = NULL; // you might want to give the java thread a name
-                args.group = NULL; // you might want to assign the java thread to a ThreadGroup
-                sharedData->jvm->AttachCurrentThread(&env, &args);
-                jclass jc = env->GetObjectClass(sharedData->clas);
-                jmethodID mid = env->GetMethodID(jc, "showDistance","(DD)V");
-                env->CallVoidMethod(sharedData->clas, mid, distanceTerm, totalLatency);
+                SendResult(totalLatency);
 
                 break;
             }
         } else {
-            if (val > 500 and sharedData->waitingForSelf) {
+            if (sharedData->waitingForSelf) {
                 sharedData->endTime = endTime;
                 sharedData->waitingForSelf = false;
                 double currentLatency = sharedData->endTime - sharedData->startTime;
                 double totalLatency = sharedData->selfLatency + currentLatency;
-                double distanceTerm = totalLatency * 0.0003436;
 
-                LOGW("Gavy Says Distance Correction (%f) in %s", distanceTerm, __FUNCTION__);
-
-                JNIEnv* env;
-                JavaVMAttachArgs args;
-                args.version = JNI_VERSION_1_6; // choose your JNI version
-                args.name = NULL; // you might want to give the java thread a name
-                args.group = NULL; // you might want to assign the java thread to a ThreadGroup
-                sharedData->jvm->AttachCurrentThread(&env, &args);
-
-
-                jclass jc = env->GetObjectClass(sharedData->clas);
-                jmethodID mid = env->GetMethodID(jc, "showDistance","(DD)V");
-                env->CallVoidMethod(sharedData->clas, mid, distanceTerm, totalLatency);
+                SendResult(totalLatency);
 
                 break;
-            } else if (val > 500 and endTime > sharedData->startTime + 500000) {
+            } else if (endTime > sharedData->startTime + 500000) {
                 // Assuming enough time has passed since last play
                 sharedData->startTime = endTime;
                 sharedData->play = true;
@@ -133,31 +85,23 @@ void AudioRecorder::ProcessSLCallback(SLAndroidSimpleBufferQueueItf bq) {
     }
 
 
-    sample_buf* freeBuf;
-    while (freeQueue_->front(&freeBuf) && devShadowQueue_->push(freeBuf)) {
-        freeQueue_->pop();
-        SLresult result = (*bq)->Enqueue(bq, freeBuf->buf_, freeBuf->cap_);
-        SLASSERT(result);
-    }
+    SLresult result = (*bq)->Enqueue(bq, buffer, sharedData->bufferSize);
+    SLASSERT(result);
 
-    /*
-     * PLAY_KICKSTART_BUFFER_COUNT: # of buffers cached in the queue before
-     * STARTING player. it is defined in audio_common.h. Whatever buffered
-     * here is the part of the audio LATENCY! adjust to fit your bill [ until
-     * it busts ]
-     */
+    currentBuffer %= currentBuffer + 1;
+
+
     if(++audioBufCount == PLAY_KICKSTART_BUFFER_COUNT && callback_) {
         callback_(ctx_, ENGINE_SERVICE_MSG_KICKSTART_PLAYER, NULL);
     }
 
     // should leave the device to sleep to save power if no buffers
-    if(devShadowQueue_->size() == 0) {
-        (*recItf_)->SetRecordState(recItf_, SL_RECORDSTATE_STOPPED);
-    }
+//    if(devShadowQueue_->size() == 0) {
+//        (*recItf_)->SetRecordState(recItf_, SL_RECORDSTATE_STOPPED);
+//    }
 }
 
 AudioRecorder::AudioRecorder(SampleFormat *sampleFormat, SLEngineItf slEngine, SharedData *sd) :
-        freeQueue_(nullptr), recQueue_(nullptr), devShadowQueue_(nullptr),
         callback_(nullptr)
 {
     SLresult result;
@@ -219,21 +163,24 @@ AudioRecorder::AudioRecorder(SampleFormat *sampleFormat, SLEngineItf slEngine, S
                     bqRecorderCallback, this);
     SLASSERT(result);
 
-    devShadowQueue_ = new AudioQueue(DEVICE_SHADOW_BUFFER_QUEUE_LEN);
-    assert(devShadowQueue_);
+    sharedData = sd;
+
+    LOGW("Gavy Says Initializing Record Buffers (%d) in %s", sharedData->bufferSize, __FUNCTION__);
+
+    buffers = new uint8_t*[NUM_RECORDING_BUFS];
+    for (int i = 0; i < NUM_RECORDING_BUFS; ++i) {
+        buffers[i] = new uint8_t[sharedData->bufferSize];
+        assert(buffers[i]);
+    }
+    assert(buffers);
+
 #ifdef ENABLE_LOG
     std::string name = "rec";
     recLog_ = new AndroidLog(name);
 #endif
-
-    sharedData = sd;
 }
 
 SLboolean AudioRecorder::Start(void) {
-    if(!freeQueue_ || !recQueue_ || !devShadowQueue_) {
-        LOGE("====NULL poiter to Start(%p, %p, %p)", freeQueue_, recQueue_, devShadowQueue_);
-        return SL_BOOLEAN_FALSE;
-    }
     audioBufCount = 0;
 
     SLresult result;
@@ -243,23 +190,15 @@ SLboolean AudioRecorder::Start(void) {
     result = (*recBufQueueItf_)->Clear(recBufQueueItf_);
     SLASSERT(result);
 
-    for(int i =0; i < RECORD_DEVICE_KICKSTART_BUF_COUNT; i++ ) {
-        sample_buf *buf = NULL;
-        if(!freeQueue_->front(&buf)) {
-            LOGE("=====OutOfFreeBuffers @ startingRecording @ (%d)", i);
-            break;
-        }
-        freeQueue_->pop();
-        assert(buf->buf_ && buf->cap_ && !buf->size_);
-
-        result = (*recBufQueueItf_)->Enqueue(recBufQueueItf_, buf->buf_,
-                                                 buf->cap_);
+    for(int i =0; i < NUM_RECORDING_BUFS; i++ ) {
+        result = (*recBufQueueItf_)->Enqueue(recBufQueueItf_, buffers[i], sharedData->bufferSize);
         SLASSERT(result);
-        devShadowQueue_->push(buf);
     }
 
     result = (*recItf_)->SetRecordState(recItf_, SL_RECORDSTATE_RECORDING);
     SLASSERT(result);
+
+    currentBuffer = 0;
 
     return (result == SL_RESULT_SUCCESS? SL_BOOLEAN_TRUE:SL_BOOLEAN_FALSE);
 }
@@ -278,11 +217,6 @@ SLboolean  AudioRecorder::Stop(void) {
     result = (*recBufQueueItf_)->Clear(recBufQueueItf_);
     SLASSERT(result);
 
-    sample_buf *buf = NULL;
-    while(devShadowQueue_->front(&buf)) {
-        devShadowQueue_->pop();
-        freeQueue_->push(buf);
-    }
 
 #ifdef ENABLE_LOG
     recLog_->flush();
@@ -297,8 +231,14 @@ AudioRecorder::~AudioRecorder() {
         (*recObjectItf_)->Destroy(recObjectItf_);
     }
 
-    if(devShadowQueue_)
-        delete (devShadowQueue_);
+    if(buffers) {
+        for (int i = 0; i < NUM_RECORDING_BUFS; ++i) {
+            if (buffers[i]) {
+                delete[] buffers[i];
+            }
+        }
+        delete[] buffers;
+    }
 #ifdef  ENABLE_LOG
     if(recLog_) {
         delete recLog_;
@@ -306,16 +246,25 @@ AudioRecorder::~AudioRecorder() {
 #endif
 }
 
-void AudioRecorder::SetBufQueues(AudioQueue *freeQ, AudioQueue *recQ) {
-    assert(freeQ && recQ);
-    freeQueue_ = freeQ;
-    recQueue_ = recQ;
-}
-
 void AudioRecorder::RegisterCallback(ENGINE_CALLBACK cb, void *ctx) {
     callback_ = cb;
     ctx_ = ctx;
 }
-int32_t AudioRecorder::dbgGetDevBufCount(void) {
-     return devShadowQueue_->size();
+
+void AudioRecorder::SendResult(double latency) {
+    double distance = latency * 0.0003436;
+
+    LOGW("Gavy Says Distance = %f, Latency = %f (Echo Mode = %d) in %s", distance, latency, sharedData->isEchoer, __FUNCTION__);
+
+    JNIEnv* env;
+    JavaVMAttachArgs args;
+    args.version = JNI_VERSION_1_6; // choose your JNI version
+    args.name = NULL; // you might want to give the java thread a name
+    args.group = NULL; // you might want to assign the java thread to a ThreadGroup
+    sharedData->jvm->AttachCurrentThread(&env, &args);
+
+
+    jclass jc = env->GetObjectClass(sharedData->clas);
+    jmethodID mid = env->GetMethodID(jc, "showDistance","(DD)V");
+    env->CallVoidMethod(sharedData->clas, mid, distance, latency);
 }
