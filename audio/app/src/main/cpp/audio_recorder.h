@@ -38,10 +38,10 @@ class AudioRecorder {
 
     SharedData  *sharedData;
 
-    Complex fftArray[256];
-
     uint8_t currentBuffer;
     uint8_t **buffers;
+
+    SlidingDFT<float, 32> *sdft;
 public:
     explicit AudioRecorder(SampleFormat *, SLEngineItf engineEngine, SharedData *sd);
     ~AudioRecorder();

@@ -40,7 +40,7 @@ public class MainActivity extends Activity
 
     private static final int AUDIO_ECHO_REQUEST = 0;
 
-    private static final boolean isEchoer = true;
+    private static final boolean isEchoer = false;
 
     TextView status_view;
     String  nativeSampleRate;

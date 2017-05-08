@@ -23,8 +23,8 @@
 #include "buf_manager.h"
 #include "debug_utils.h"
 
-#define MAIN_MODE_FREQUENCY 20.0625     // Corresponds to 107 in FFT buffer
-#define ECHO_MODE_FREQUENCY 20.8125     // Corresponds to 111 in FFT buffer
+#define MAIN_MODE_FREQUENCY 21000     // Corresponds to 15 in FFT buffer
+#define ECHO_MODE_FREQUENCY 21000     // Corresponds to 14 in FFT buffer
 
 class AudioPlayer {
     // buffer queue player interfaces

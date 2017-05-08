@@ -22,27 +22,24 @@ void AudioRecorder::ProcessSLCallback(SLAndroidSimpleBufferQueueItf bq, double t
     int samples = sharedData->bufferSize / 2;
     int16_t *arr = (int16_t *) buffer;
 
-    double start = now_us();
-    for (int i = 0; i < 256; ++i) {
-        if (i < samples) {
-            fftArray[i] = arr[i];
-        } else {
-            fftArray[i] = 0;
-        }
-    }
-    CArray data(fftArray, 256);
-    fft(data);
-    double khzVal = std::abs(data[107]);
-
-    LOGW("Gavy Says Max FFT (%f, %f) in %s", khzVal, now_us() - start, __FUNCTION__);
+//    double start = now_us();
+//    double khzVal = std::abs(data[107]);
+//    for (int i = 0; i < samples; ++i) {
+//        sdft->update(arr[i]);
+//    }
+//    double khzVal = std::abs(sdft->dft[14]);
+//
+//    LOGW("Gavy Says Max FFT (%f, %f) in %s", khzVal, now_us() - start, __FUNCTION__);
 
 
     for (int i = 0; i < samples; ++i) {
-        int16_t val = arr[i];
-        val = abs((int) val);
+        sdft->update(arr[i]);
+        double val = std::abs(sdft->dft[14]);
+//        int16_t val = arr[i];
+//        val = abs((int) val);
 
 
-        if (val < 500) {
+        if (val < 150) {
             continue;
         }
 
@@ -174,6 +171,9 @@ AudioRecorder::AudioRecorder(SampleFormat *sampleFormat, SLEngineItf slEngine, S
     }
     assert(buffers);
 
+    sdft = new SlidingDFT<float, 32>();
+    assert(sdft);
+
 #ifdef ENABLE_LOG
     std::string name = "rec";
     recLog_ = new AndroidLog(name);
@@ -239,6 +239,8 @@ AudioRecorder::~AudioRecorder() {
         }
         delete[] buffers;
     }
+
+    delete sdft;
 #ifdef  ENABLE_LOG
     if(recLog_) {
         delete recLog_;
