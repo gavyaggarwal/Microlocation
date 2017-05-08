@@ -38,7 +38,7 @@ public class TrilaterationDemo {
     }
 
     private double getDistance(double rssi) {
-        return 0.5717 * Math.exp(-0.0798 * rssi) / 100;
+        return 0.441 * Math.exp(-0.0678 * rssi) / 100;
     };
 
     private double[] performTrilateration(double[][] positions, double[] distances, double x, double y, double z, double ypres) {
