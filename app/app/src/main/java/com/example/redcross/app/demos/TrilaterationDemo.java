@@ -38,7 +38,11 @@ public class TrilaterationDemo {
     }
 
     private double getDistance(double rssi) {
-        return 0.441 * Math.exp(-0.0678 * rssi) / 100;
+        if (rssi > -85.5){
+            return 0.441 * Math.exp(-0.0678 * rssi) / 100;
+        } else {
+            return 37.044 * Math.exp(-0.0288 * rssi)/100;
+        }
     };
 
     private double[] performTrilateration(double[][] positions, double[] distances, double x, double y, double z, double ypres) {
