@@ -39,7 +39,7 @@ public class Device {
                 y = 0;
                 z = 0;
                 break;
-            case "cb7458c492fc64a9":
+            case "657a6df8ae381735":
                 id = "D";
                 color = "#4BC0C0";
                 x = 0;

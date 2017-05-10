@@ -87,12 +87,12 @@ public class TrilaterationDemo {
             double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
             if (rad != 0) {
                 // 0.1 is normalization constant
-                gradx += 0.1 * 2 / rad * dx;
-                grady += 0.1 * 2 / rad * dy;
-                gradz += 0.1 * 2 / rad * dz;
+                gradx += 0.5 * 2 / rad * dx;
+                grady += 0.5 * 2 / rad * dy;
+                gradz += 0.5 * 2 / rad * dz;
                 error += rad;
             }
-            grady += 2 * (y - ypres) * 3;   // Pressure is fairly accurate, give it a strong influence
+            grady += 2 * (y - ypres) * 5;   // Pressure is fairly accurate, give it a strong influence
 
             x -= gradx * eta;
             y -= grady * eta;
