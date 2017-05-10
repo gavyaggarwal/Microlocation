@@ -9,7 +9,7 @@ var rawData = {};
 
 function clearData() {
   for (key in rawData) {
-    if (Date.now() - rawData[key].lastUpdate >= 300000) {
+    if (Date.now() - rawData[key].lastUpdate >= 30000) {
       delete rawData[key];
     };
   }
