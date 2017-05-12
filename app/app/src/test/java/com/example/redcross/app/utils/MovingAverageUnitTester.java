@@ -1,11 +1,8 @@
-package com.example.redcross.app;
+package com.example.redcross.app.utils;
 
 // Import testing apparatus
 import org.junit.Test;
 import static org.junit.Assert.*;
-
-// Import testing classes
-import com.example.redcross.app.MovingAverage;
 
 public class MovingAverageUnitTester {
 
