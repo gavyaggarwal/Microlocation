@@ -31,7 +31,7 @@ public class Bluetooth {
     public static Bluetooth instance = new Bluetooth();
     private Map<Character, Map<DataType, Object>> devices = new HashMap<>();
     private static final short APP_ID = 12124;
-    private static final int SCAN_AGE_LIMIT = 1; // in seconds
+    private static final int SCAN_AGE_LIMIT = 3; // in seconds
     private static final byte MESSAGE_SIZE = 13;
     private long updateTime = 0;
     private BluetoothLeAdvertiser advertiser;
@@ -61,6 +61,11 @@ public class Bluetooth {
 
     public void startAdvertising() {
         byte[] message = createMessage();
+
+        Log.d("LastMessage", String.valueOf((int) message[1]) + " " + String.valueOf((int) message[2]) + " " + String.valueOf((int) message[3]) + " " + String.valueOf((int) message[4]));
+        Log.d("LastMessage", String.valueOf((int) message[9]) + " " + String.valueOf((int) message[10]) + " " + String.valueOf((int) message[11]) + " " + String.valueOf((int) message[12]));
+        Log.d("LastMessage", String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
+
 
         AdvertiseSettings adSettings = new AdvertiseSettings.Builder()
                 .setTxPowerLevel( AdvertiseSettings.ADVERTISE_TX_POWER_HIGH )
@@ -105,9 +110,15 @@ public class Bluetooth {
     private byte[] createMessage() {
         byte[] message = new byte[MESSAGE_SIZE];
         byte id = (byte) Device.instance.id.charAt(0);
+
+        if (Double.isNaN(Device.instance.x) ||Double.isNaN(Device.instance.y) || Double.isNaN(Device.instance.z)) {
+            Log.d("multiphone", "error ahhhh");
+        }
+
         byte[] x = ByteBuffer.allocate(4).putFloat(Device.instance.x).array();
         byte[] y = ByteBuffer.allocate(4).putFloat(Device.instance.y).array();
         byte[] z = ByteBuffer.allocate(4).putFloat(Device.instance.z).array();
+
         message[0] = id;
         for (int i = 0; i < 4; i++) {
             message[i + 1] = x[i];
@@ -118,6 +129,7 @@ public class Bluetooth {
         for (int i = 0; i < 4; i++) {
             message[i + 9] = z[i];
         }
+
         return message;
     }
 
@@ -136,14 +148,26 @@ public class Bluetooth {
         byte[] x = {m[1], m[2], m[3], m[4]};
         byte[] y = {m[5], m[6], m[7], m[8]};
         byte[] z = {m[9], m[10], m[11], m[12]};
-        map.put(DataType.DEVICE_NAME, id);
-        map.put(DataType.X_COORDINATE, ByteBuffer.wrap(x).getFloat());
-        map.put(DataType.Y_COORDINATE, ByteBuffer.wrap(y).getFloat());
-        map.put(DataType.Z_COORDINATE, ByteBuffer.wrap(z).getFloat());
-        map.put(DataType.UPDATE_TIME, new Date().getTime());
-        map.put(DataType.RSSI_VALUE, RSSI);
 
-        devices.put(id, map);
+        if (Double.isNaN(ByteBuffer.wrap(x).getFloat()) || Double.isNaN(ByteBuffer.wrap(y).getFloat()) || Double.isNaN(ByteBuffer.wrap(z).getFloat())) {
+            Log.d("errPars", "location parse bad");
+//            stopScanning();
+//            startScanning();
+        }
+        else {
+            map.put(DataType.DEVICE_NAME, id);
+            map.put(DataType.X_COORDINATE, ByteBuffer.wrap(x).getFloat());
+            map.put(DataType.Y_COORDINATE, ByteBuffer.wrap(y).getFloat());
+            map.put(DataType.Z_COORDINATE, ByteBuffer.wrap(z).getFloat());
+            map.put(DataType.UPDATE_TIME, new Date().getTime());
+            map.put(DataType.RSSI_VALUE, RSSI);
+
+            devices.put(id, map);
+            Log.d("errPars", "location parse good");
+        }
+
+
+
     }
 
     public ArrayList<Map<DataType, Object>> getNearbyDevices() {
@@ -181,7 +205,7 @@ public class Bluetooth {
             try {
                 byte b[] = result.getScanRecord().getManufacturerSpecificData(APP_ID);
                 if (b != null && b.length == MESSAGE_SIZE) {
-                    parseMessage(b, (float) result.getRssi());
+                    parseMessage(b.clone(), (float) result.getRssi());
                 }
             } catch (Exception e) {
                 Log.d("Bluetooth", "Error Parsing Scan Result: " + e.toString());

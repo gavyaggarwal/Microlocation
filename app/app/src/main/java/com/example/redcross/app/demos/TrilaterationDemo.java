@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.lang.Double.NaN;
+
 /**
  * Created by gavya on 4/19/2017.
  */
@@ -39,7 +41,7 @@ public class TrilaterationDemo {
 
     private double getDistance(double rssi) {
         if (rssi > -85.5){
-            return 0.441 * Math.exp(-0.0678 * rssi) / 100;
+            return 2.0747 * Math.exp(-0.0549 * rssi) / 100;
         } else {
             return 37.044 * Math.exp(-0.0288 * rssi)/100;
         }
@@ -74,7 +76,7 @@ public class TrilaterationDemo {
                 double dy = y - positions[j][1];
                 double dz = z - positions[j][2];
                 double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                double confidence = 1.0 / distances[j];
+                double confidence = 1.0 / (distances[j] + 1);
                 double distanceError = rad - distances[j];
                 gradx += 2 * confidence * distanceError / rad * dx;
                 grady += 2 * confidence * distanceError / rad * dy;
@@ -97,6 +99,10 @@ public class TrilaterationDemo {
             x -= gradx * eta;
             y -= grady * eta;
             z -= gradz * eta;
+
+            if (Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z)) {
+                Log.d("multiphone", "error ahhhh");
+            }
         }
 
         return new double[]{x, y, z};
@@ -159,7 +165,8 @@ public class TrilaterationDemo {
                 double y_barometer = Sensors.instance.estimatedHeight();
                 //Server.instance.sendDebug("Estimated Height Change", (float) y_barometer);
                 //if (Device.instance.id.equals(freeDevice)) {
-                if (Sensors.instance.getIsMoving() == true) {
+
+                if (Sensors.instance.getIsMoving()) {
                     ArrayList<Map<Bluetooth.DataType, Object>> devices = Bluetooth.instance.getNearbyDevices();
                     double[][] positions = new double[devices.size()][3];
                     double[] distances = new double[devices.size()];
@@ -174,7 +181,7 @@ public class TrilaterationDemo {
                         MovingAverage rssi = (MovingAverage) data.get(Bluetooth.DataType.RSSI_VALUE);
 
                         distances[i] = getDistance((double) rssi.average());
-                        Log.d("CurDis", "Distance from " + String.valueOf(data.get(Bluetooth.DataType.DEVICE_NAME)) + ": " + String.valueOf((float) distances[i]));
+                        Log.d("CurDis", i + "Distance from " + String.valueOf(data.get(Bluetooth.DataType.DEVICE_NAME)) + ": " + String.valueOf((float) distances[i]) + ", RSSI: " + String.valueOf(rssi.average()));
                         //Server.instance.sendDebug("Distance from " + String.valueOf(data.get(Bluetooth.DataType.DEVICE_NAME)), (float) distances[i]);
 
                         //Log.d("TEST0", "Have Device: " + String.valueOf(data[0]) + " " + String.valueOf(data[1]) + " " + String.valueOf(data[2]));
@@ -188,34 +195,38 @@ public class TrilaterationDemo {
                     //double[] centroid = optimum.getPoint().toArray();
                     double[] centroid = performTrilateration(positions, distances, Device.instance.x, Device.instance.y, Device.instance.z, y_barometer);
 
-                    ArrayList<ArrayList<Integer>> combs = combine(devices.size(), 3);
-                    double[][] centroids = new double[combs.size()][3];
 
-                    if (devices.size() > 3) {
-
-                        double[] avgCentroid = new double[3];
-                        int idx = 0;
-                        double[][] p = new double[3][3];
-                        double[] d = new double[3];
-                        Map<String, Object> res = new HashMap<>();
-                        for (ArrayList<Integer> comb : combs) {
-                            res = getSubset(positions, distances, comb);
-                            centroids[idx] = performTrilateration((double[][]) res.get("pos"), (double[]) res.get("dis"), Device.instance.x, Device.instance.y, Device.instance.z, y_barometer);
-                        }
-                        for (int i = 0; i < 3; i++) {
-                            double sum = 0;
-                            for (int j=0; j < combs.size(); j++) {
-                                sum += centroids[j][i];
-                            }
-                            avgCentroid[i] = sum/combs.size();
-                        }
-                        Log.d("Location", "Averaged:" + String.valueOf(avgCentroid[0]) + " " + String.valueOf(avgCentroid[1]) + " " + String.valueOf(avgCentroid[2]));
-                    }
+//                    if (devices.size() > 3) {
+//                        ArrayList<ArrayList<Integer>> combs = combine(devices.size(), 3);
+//                        double[][] centroids = new double[combs.size()][3];
+//
+//                        double[] avgCentroid = new double[3];
+//                        int idx = 0;
+//                        double[][] p = new double[3][3];
+//                        double[] d = new double[3];
+//                        Map<String, Object> res = new HashMap<>();
+//                        for (ArrayList<Integer> comb : combs) {
+//                            res = getSubset(positions, distances, comb);
+//                            centroids[idx] = performTrilateration((double[][]) res.get("pos"), (double[]) res.get("dis"), Device.instance.x, Device.instance.y, Device.instance.z, y_barometer);
+//                        }
+//                        for (int i = 0; i < 3; i++) {
+//                            double sum = 0;
+//                            for (int j=0; j < combs.size(); j++) {
+//                                sum += centroids[j][i];
+//                            }
+//                            avgCentroid[i] = sum/combs.size();
+//                        }
+//                        Log.d("Location", "Averaged:" + String.valueOf(avgCentroid[0]) + " " + String.valueOf(avgCentroid[1]) + " " + String.valueOf(avgCentroid[2]));
+//                    }
 
 
                     Device.instance.x = (float) centroid[0];
                     Device.instance.y = (float) centroid[1];
                     Device.instance.z = (float) centroid[2];
+
+                    if (Double.isNaN(Device.instance.x) ||Double.isNaN(Device.instance.y) || Double.isNaN(Device.instance.z)) {
+                        Log.d("multiphone", "error ahhhh");
+                    }
 
                     Log.d("Location", "Current: " + String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
 
