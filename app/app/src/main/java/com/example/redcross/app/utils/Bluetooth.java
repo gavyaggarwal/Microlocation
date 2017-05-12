@@ -22,17 +22,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-/**
- * Created by gavya on 4/23/2017.
- */
-
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class Bluetooth {
     public static Bluetooth instance = new Bluetooth();
     private Map<Character, Map<DataType, Object>> devices = new HashMap<>();
     private static final short APP_ID = 12124;
     private static final int SCAN_AGE_LIMIT = 3; // in seconds
-    private static final byte MESSAGE_SIZE = 13;
     private long updateTime = 0;
     private BluetoothLeAdvertiser advertiser;
     private BluetoothLeScanner scanner;
@@ -108,34 +103,14 @@ public class Bluetooth {
     }
 
     private byte[] createMessage() {
-        byte[] message = new byte[MESSAGE_SIZE];
-        byte id = (byte) Device.instance.id.charAt(0);
-
-        if (Double.isNaN(Device.instance.x) ||Double.isNaN(Device.instance.y) || Double.isNaN(Device.instance.z)) {
-            Log.d("multiphone", "error ahhhh");
-        }
-
-        byte[] x = ByteBuffer.allocate(4).putFloat(Device.instance.x).array();
-        byte[] y = ByteBuffer.allocate(4).putFloat(Device.instance.y).array();
-        byte[] z = ByteBuffer.allocate(4).putFloat(Device.instance.z).array();
-
-        message[0] = id;
-        for (int i = 0; i < 4; i++) {
-            message[i + 1] = x[i];
-        }
-        for (int i = 0; i < 4; i++) {
-            message[i + 5] = y[i];
-        }
-        for (int i = 0; i < 4; i++) {
-            message[i + 9] = z[i];
-        }
-
-        return message;
+        Device dev = Device.instance;
+        return new BluetoothMessage(dev.x, dev.y, dev.z, dev.id.charAt(0)).encode();
     }
 
-    private void parseMessage(byte[] m, float rssi) {
+    private void parseMessage(byte[] bytes, float rssi) {
         Map<DataType, Object> map = new HashMap<DataType, Object>();
-        Character id = Character.valueOf((char) m[0]);
+        BluetoothMessage message = new BluetoothMessage(bytes);
+        Character id = Character.valueOf(message.dev);
 
         MovingAverage RSSI;
         if (devices.get(id) != null) {
@@ -145,28 +120,22 @@ public class Bluetooth {
         };
         RSSI.add(rssi);
 
-        byte[] x = {m[1], m[2], m[3], m[4]};
-        byte[] y = {m[5], m[6], m[7], m[8]};
-        byte[] z = {m[9], m[10], m[11], m[12]};
-
-        if (Double.isNaN(ByteBuffer.wrap(x).getFloat()) || Double.isNaN(ByteBuffer.wrap(y).getFloat()) || Double.isNaN(ByteBuffer.wrap(z).getFloat())) {
-            Log.d("errPars", "location parse bad");
+        if (Double.isNaN(message.x) || Double.isNaN(message.y) || Double.isNaN(message.z)) {
+            Log.d("errPars", Device.instance.id + " " + Device.instance.x + " location parse bad: " + message.x + " " + message.dev);
 //            stopScanning();
 //            startScanning();
         }
         else {
             map.put(DataType.DEVICE_NAME, id);
-            map.put(DataType.X_COORDINATE, ByteBuffer.wrap(x).getFloat());
-            map.put(DataType.Y_COORDINATE, ByteBuffer.wrap(y).getFloat());
-            map.put(DataType.Z_COORDINATE, ByteBuffer.wrap(z).getFloat());
+            map.put(DataType.X_COORDINATE, message.x);
+            map.put(DataType.Y_COORDINATE, message.y);
+            map.put(DataType.Z_COORDINATE, message.z);
             map.put(DataType.UPDATE_TIME, new Date().getTime());
             map.put(DataType.RSSI_VALUE, RSSI);
 
             devices.put(id, map);
-            Log.d("errPars", "location parse good");
+            Log.d("errPars", Device.instance.id + " " + Device.instance.x + " location parse good: " + message.x + " " + message.dev);
         }
-
-
 
     }
 
@@ -204,7 +173,7 @@ public class Bluetooth {
 
             try {
                 byte b[] = result.getScanRecord().getManufacturerSpecificData(APP_ID);
-                if (b != null && b.length == MESSAGE_SIZE) {
+                if (b != null && b.length == BluetoothMessage.SIZE) {
                     parseMessage(b.clone(), (float) result.getRssi());
                 }
             } catch (Exception e) {

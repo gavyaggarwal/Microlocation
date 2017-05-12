@@ -1,14 +1,10 @@
-package com.example.redcross.app;
+package com.example.redcross.app.utils;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
-import android.util.Log;
 
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
