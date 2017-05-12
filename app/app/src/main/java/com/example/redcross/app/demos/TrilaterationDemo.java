@@ -101,7 +101,10 @@ public class TrilaterationDemo {
             z -= gradz * eta;
 
             if (Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z)) {
-                Log.d("multiphone", "error ahhhh");
+                x = xold;
+                y = yold;
+                z = zold;
+                Log.d("multiphone", "NaN error ahhhh");
             }
         }
 
@@ -225,7 +228,7 @@ public class TrilaterationDemo {
                     Device.instance.z = (float) centroid[2];
 
                     if (Double.isNaN(Device.instance.x) ||Double.isNaN(Device.instance.y) || Double.isNaN(Device.instance.z)) {
-                        Log.d("multiphone", "error ahhhh");
+                        Log.d("multiphone", "NAN error ahhhh");
                     }
 
                     Log.d("Location", "Current: " + String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
