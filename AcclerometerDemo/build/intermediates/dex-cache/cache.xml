@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="true"
+        jar="/home/ksbrar/AndroidStudioProjects/AcclerometerDemo/app/build/intermediates/incremental-classes/debug/instant-run-bootstrap.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.3"
+        sha1="12cc38d13ea6c208ab6f04ab491aa030548bd2ca">
+        <dex dex="/home/ksbrar/AndroidStudioProjects/AcclerometerDemo/app/build/intermediates/transforms/dex/debug/folders/1000/10000/instant-run-bootstrap_2148281ece9bf271622a981dfa692231441d34fc/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/ksbrar/AndroidStudioProjects/AcclerometerDemo/app/build/intermediates/incremental-runtime-classes/debug/instant-run.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.3"
+        sha1="510aa6efc159983dfbffa676a0dae37568c0a46f">
+        <dex dex="/home/ksbrar/AndroidStudioProjects/AcclerometerDemo/app/build/intermediates/transforms/dex/debug/folders/1000/10000/instant-run_4da55ad7f01d870797963d3ecf4ecd6be436ce75/classes.dex" />
+    </item>
+
+</items>
