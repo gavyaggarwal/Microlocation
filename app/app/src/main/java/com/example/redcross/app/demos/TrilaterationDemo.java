@@ -96,6 +96,20 @@ public class TrilaterationDemo {
             }
             grady += 2 * (y - ypres) * 5;   // Pressure is fairly accurate, give it a strong influence
 
+            // Accelerometer-based additions to gradient.
+            float[] acclerometerPosition = Sensors.instance.getCurrentAccelerometerPosition();
+            double acceldx = x - acclerometerPosition[0];
+            double acceldy = y - acclerometerPosition[1];
+            double acceldz = z - acclerometerPosition[2];
+            double accelRad = Math.sqrt(acceldx * acceldx + acceldy * acceldy + acceldz * acceldz);
+            if (accelRad != 0) {
+                // 0.1 is normalization constant
+                gradx += 0.5 * 2 / accelRad * acceldx;
+                grady += 0.5 * 2 / accelRad * acceldy;
+                gradz += 0.5 * 2 / accelRad * acceldz;
+                error += accelRad;
+            }
+
             x -= gradx * eta;
             y -= grady * eta;
             z -= gradz * eta;
