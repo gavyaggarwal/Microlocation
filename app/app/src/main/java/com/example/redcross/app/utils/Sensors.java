@@ -71,7 +71,7 @@ public class Sensors implements SensorEventListener {
             currentPressure = averagePressure;
             if (!getIsMoving()) {
                 referencePressure = averagePressure;
-                referenceHeight = Device.instance.y;
+                referenceHeight = Device.instance.location.y;
             }
         }
         if (mySensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {

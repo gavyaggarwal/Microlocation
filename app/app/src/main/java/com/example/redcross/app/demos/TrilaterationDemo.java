@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.example.redcross.app.utils.Bluetooth;
 import com.example.redcross.app.utils.Device;
+import com.example.redcross.app.utils.Point;
 import com.example.redcross.app.utils.MovingAverage;
 import com.example.redcross.app.utils.Sensors;
 import com.example.redcross.app.utils.Server;
@@ -15,8 +16,6 @@ import com.example.redcross.app.utils.Server;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
-import static java.lang.Double.NaN;
 
 /**
  * Created by gavya on 4/19/2017.
@@ -43,25 +42,23 @@ public class TrilaterationDemo {
         if (rssi > -85.5){
             return 2.0747 * Math.exp(-0.0549 * rssi) / 100;
         } else {
-            return 37.044 * Math.exp(-0.0288 * rssi)/100;
+            return 37.044 * Math.exp(-0.0288 * rssi) / 100;
         }
     };
 
-    private double[] performTrilateration(double[][] positions, double[] distances, double x, double y, double z, double ypres) {
+    private Point performTrilateration(Point[] positions, double[] distances, Point lastLocation, double ypres) {
         // Perform a gradient descent to optimize the following objective function
         //$$S = \sum^{n}_{i=1}{c_i(\sqrt{(x-x_i)^2 + (y-y_i)^2 + (z-z_i)^2} - d_i)^2} + \sqrt{(x-x_{old})^2 + (y-y_{old})^2 + (z-z_{old})^2}$$
 
-        double xold = x;
-        double yold = y;
-        double zold = z;
-        if (x == 0) {
-            x = 1e-7;
+        Point loc = new Point(lastLocation);
+        if (loc.x == 0) {
+            loc.x = 1e-7f;
         }
-        if (y == 0) {
-            y = 1e-7;
+        if (loc.y == 0) {
+            loc.y = 1e-7f;
         }
-        if (z == 0) {
-            z = 1e-7;
+        if (loc.z == 0) {
+            loc.z = 1e-7f;
         }
 
         double eta = 0.01;
@@ -72,9 +69,9 @@ public class TrilaterationDemo {
             double grady = 0;
             double gradz = 0;
             for (int j = 0; j < positions.length; j++) {
-                double dx = x - positions[j][0];
-                double dy = y - positions[j][1];
-                double dz = z - positions[j][2];
+                double dx = loc.x - positions[j].x;
+                double dy = loc.y - positions[j].y;
+                double dz = loc.z - positions[j].z;
                 double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
                 double confidence = 1.0 / (distances[j] + 1);
                 double distanceError = rad - distances[j];
@@ -83,9 +80,9 @@ public class TrilaterationDemo {
                 gradz += 2 * confidence * distanceError / rad * dz;
                 error += confidence * distanceError * distanceError;
             }
-            double dx = x - xold;
-            double dy = y - yold;
-            double dz = z - zold;
+            double dx = loc.x - lastLocation.x;
+            double dy = loc.y - lastLocation.y;
+            double dz = loc.z - lastLocation.z;
             double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
             if (rad != 0) {
                 // 0.1 is normalization constant
@@ -94,21 +91,19 @@ public class TrilaterationDemo {
                 gradz += 0.5 * 2 / rad * dz;
                 error += rad;
             }
-            grady += 2 * (y - ypres) * 5;   // Pressure is fairly accurate, give it a strong influence
+            grady += 2 * (loc.y - ypres) * 5;   // Pressure is fairly accurate, give it a strong influence
 
-            x -= gradx * eta;
-            y -= grady * eta;
-            z -= gradz * eta;
+            loc.x -= gradx * eta;
+            loc.y -= grady * eta;
+            loc.z -= gradz * eta;
 
-            if (Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z)) {
-                x = xold;
-                y = yold;
-                z = zold;
+            if (loc.isInvalid()) {
+                loc = lastLocation;
                 Log.d("multiphone", "NaN error ahhhh");
             }
         }
 
-        return new double[]{x, y, z};
+        return loc;
     }
 
     public ArrayList<ArrayList<Integer>> combine(int n, int k) {
@@ -171,15 +166,13 @@ public class TrilaterationDemo {
 
                 if (Sensors.instance.getIsMoving()) {
                     ArrayList<Map<Bluetooth.DataType, Object>> devices = Bluetooth.instance.getNearbyDevices();
-                    double[][] positions = new double[devices.size()][3];
+                    Point[] positions = new Point[devices.size()];
                     double[] distances = new double[devices.size()];
 
 
                     for (int i = 0; i < devices.size(); i++) {
                         Map<Bluetooth.DataType, Object> data = devices.get(i);
-                        positions[i][0] = ((Float)data.get(Bluetooth.DataType.X_COORDINATE)).doubleValue();
-                        positions[i][1] = ((Float)data.get(Bluetooth.DataType.Y_COORDINATE)).doubleValue();
-                        positions[i][2] = ((Float)data.get(Bluetooth.DataType.Z_COORDINATE)).doubleValue();
+                        positions[i] = (Point) data.get(Bluetooth.DataType.LOCATION);
 
                         MovingAverage rssi = (MovingAverage) data.get(Bluetooth.DataType.RSSI_VALUE);
 
@@ -196,7 +189,7 @@ public class TrilaterationDemo {
 
                     // the answer
                     //double[] centroid = optimum.getPoint().toArray();
-                    double[] centroid = performTrilateration(positions, distances, Device.instance.x, Device.instance.y, Device.instance.z, y_barometer);
+                    Point centroid = performTrilateration(positions, distances, Device.instance.location, y_barometer);
 
 
 //                    if (devices.size() > 3) {
@@ -219,19 +212,17 @@ public class TrilaterationDemo {
 //                            }
 //                            avgCentroid[i] = sum/combs.size();
 //                        }
-//                        Log.d("Location", "Averaged:" + String.valueOf(avgCentroid[0]) + " " + String.valueOf(avgCentroid[1]) + " " + String.valueOf(avgCentroid[2]));
+//                        Log.d("Point", "Averaged:" + String.valueOf(avgCentroid[0]) + " " + String.valueOf(avgCentroid[1]) + " " + String.valueOf(avgCentroid[2]));
 //                    }
 
 
-                    Device.instance.x = (float) centroid[0];
-                    Device.instance.y = (float) centroid[1];
-                    Device.instance.z = (float) centroid[2];
+                    Device.instance.location = centroid;
 
-                    if (Double.isNaN(Device.instance.x) ||Double.isNaN(Device.instance.y) || Double.isNaN(Device.instance.z)) {
+                    if (Device.instance.location.isInvalid()) {
                         Log.d("multiphone", "NAN error ahhhh");
                     }
 
-                    Log.d("Location", "Current: " + String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
+                    Log.d("Point", "Current: " + Device.instance.location);
 
                     Bluetooth.instance.updateMessage();
 
@@ -239,7 +230,7 @@ public class TrilaterationDemo {
                 } else {
                     //Server.instance.sendDebug("Anchored", 1);
                 }
-                Server.instance.sendLocation(Device.instance.x, Device.instance.y, Device.instance.z);
+                Server.instance.sendLocation();
 
             } finally {
                 mHandler.postDelayed(mStatusChecker, 50);
