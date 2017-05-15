@@ -208,7 +208,7 @@ public class Sensors implements SensorEventListener {
                     currentAccelerometerPosition = new float[3];
                     currentAccelerometerPosition[0] = 0.0f;
                     currentAccelerometerPosition[1] = 0.0f;
-                    currentAccelerometerPosition[2] = 0.0f;
+                    currentAccelerometerPosition[2] = 0.0f; //test
                 }
                 currentAccelerometerPosition[0] += currentVelocity[0] * dT;
                 currentAccelerometerPosition[1] += currentVelocity[1] * dT;
