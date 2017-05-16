@@ -46,7 +46,7 @@ public class TrilaterationDemo {
         }
     };
 
-    private Point performTrilateration(Point[] positions, double[] distances, Point lastLocation, double ypres) {
+    private Point performTrilateration(Point[] positions, double[] distances, Point lastLocation, double ypres, float[] accelerometerPrediction) {
         // Perform a gradient descent to optimize the following objective function
         //$$S = \sum^{n}_{i=1}{c_i(\sqrt{(x-x_i)^2 + (y-y_i)^2 + (z-z_i)^2} - d_i)^2} + \sqrt{(x-x_{old})^2 + (y-y_{old})^2 + (z-z_{old})^2}$$
 
@@ -92,6 +92,19 @@ public class TrilaterationDemo {
                 error += rad;
             }
             grady += 2 * (loc.y - ypres) * 5;   // Pressure is fairly accurate, give it a strong influence
+
+            // Accelerometer-based additions to gradient.
+            double acceldx = loc.x - accelerometerPrediction[0];
+            double acceldy = loc.y - accelerometerPrediction[1];
+            double acceldz = loc.z - accelerometerPrediction[2];
+            double accelRad = Math.sqrt(acceldx * acceldx + acceldy * acceldy + acceldz * acceldz);
+            if (accelRad != 0) {
+                // 0.1 is normalization constant
+                gradx += 0.5 * 2 / accelRad * acceldx;
+                grady += 0.5 * 2 / accelRad * acceldy;
+                gradz += 0.5 * 2 / accelRad * acceldz;
+                error += accelRad;
+            }
 
             loc.x -= gradx * eta;
             loc.y -= grady * eta;
@@ -160,14 +173,17 @@ public class TrilaterationDemo {
         public void run() {
             try {
                 //String freeDevice = "E";
-                double y_barometer = Sensors.instance.estimatedHeight();
                 //Server.instance.sendDebug("Estimated Height Change", (float) y_barometer);
                 //if (Device.instance.id.equals(freeDevice)) {
 
                 if (Sensors.instance.getIsMoving()) {
                     ArrayList<Map<Bluetooth.DataType, Object>> devices = Bluetooth.instance.getNearbyDevices();
+                    double y_barometer = Sensors.instance.estimatedHeight();
+                    float[] accelerometerPrediction = Sensors.instance.getCurrentAccelerometerPosition();
+
                     Point[] positions = new Point[devices.size()];
                     double[] distances = new double[devices.size()];
+
 
 
                     for (int i = 0; i < devices.size(); i++) {
@@ -189,7 +205,7 @@ public class TrilaterationDemo {
 
                     // the answer
                     //double[] centroid = optimum.getPoint().toArray();
-                    Point centroid = performTrilateration(positions, distances, Device.instance.location, y_barometer);
+                    Point centroid = performTrilateration(positions, distances, Device.instance.location, y_barometer, accelerometerPrediction);
 
 
 //                    if (devices.size() > 3) {
