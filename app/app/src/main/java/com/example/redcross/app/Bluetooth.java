@@ -1,4 +1,4 @@
-package com.example.redcross.app.utils;
+package com.example.redcross.app;
 
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
@@ -15,7 +15,10 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
-import java.nio.ByteBuffer;
+import com.example.redcross.app.utils.BluetoothMessage;
+import com.example.redcross.app.utils.Device;
+import com.example.redcross.app.utils.MovingAverage;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;

@@ -6,11 +6,11 @@ import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
-import com.example.redcross.app.utils.Bluetooth;
+import com.example.redcross.app.Bluetooth;
 import com.example.redcross.app.utils.Device;
 import com.example.redcross.app.utils.Point;
 import com.example.redcross.app.utils.MovingAverage;
-import com.example.redcross.app.utils.Sensors;
+import com.example.redcross.app.Sensors;
 import com.example.redcross.app.utils.Server;
 
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class TrilaterationDemo {
         }
     };
 
-    private Point performTrilateration(Point[] positions, double[] distances, Point lastLocation, double ypres, float[] accelerometerPrediction) {
+    public static Point performTrilateration(Point[] positions, double[] distances, Point lastLocation, double ypres, float[] accelerometerPrediction) {
         // Perform a gradient descent to optimize the following objective function
         //$$S = \sum^{n}_{i=1}{c_i(\sqrt{(x-x_i)^2 + (y-y_i)^2 + (z-z_i)^2} - d_i)^2} + \sqrt{(x-x_{old})^2 + (y-y_{old})^2 + (z-z_{old})^2}$$
 
@@ -65,50 +65,40 @@ public class TrilaterationDemo {
 
         for (int i = 0; i < 1000; i++) {
             double error = 0;
-            double gradx = 0;
-            double grady = 0;
-            double gradz = 0;
+            Point gradient = new Point();
             for (int j = 0; j < positions.length; j++) {
-                double dx = loc.x - positions[j].x;
-                double dy = loc.y - positions[j].y;
-                double dz = loc.z - positions[j].z;
-                double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                Point delta = loc.subtract(positions[j]);
+                double rad = delta.getNorm();
                 double confidence = 1.0 / (distances[j] + 1);
                 double distanceError = rad - distances[j];
-                gradx += 2 * confidence * distanceError / rad * dx;
-                grady += 2 * confidence * distanceError / rad * dy;
-                gradz += 2 * confidence * distanceError / rad * dz;
+                gradient = gradient.add(delta.scale(2 * confidence * distanceError / rad));
                 error += confidence * distanceError * distanceError;
             }
-            double dx = loc.x - lastLocation.x;
-            double dy = loc.y - lastLocation.y;
-            double dz = loc.z - lastLocation.z;
-            double rad = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (rad != 0) {
-                // 0.1 is normalization constant
-                gradx += 0.5 * 2 / rad * dx;
-                grady += 0.5 * 2 / rad * dy;
-                gradz += 0.5 * 2 / rad * dz;
-                error += rad;
+            Point normalizationDelta = loc.subtract(lastLocation);
+            double normalizationRad = normalizationDelta.getNorm();
+            if (normalizationRad != 0) {
+                // 0.5 is normalization constant
+                gradient = gradient.add(normalizationDelta.scale(0.5 * 2 / normalizationRad));
+                error += normalizationRad;
             }
-            grady += 2 * (loc.y - ypres) * 5;   // Pressure is fairly accurate, give it a strong influence
+            gradient.y += 2 * (loc.y - ypres) * 5;   // Pressure is fairly accurate, give it a strong influence
 
-            // Accelerometer-based additions to gradient.
-            double acceldx = loc.x - accelerometerPrediction[0];
-            double acceldy = loc.y - accelerometerPrediction[1];
-            double acceldz = loc.z - accelerometerPrediction[2];
-            double accelRad = Math.sqrt(acceldx * acceldx + acceldy * acceldy + acceldz * acceldz);
-            if (accelRad != 0) {
-                // 0.1 is normalization constant
-                gradx += 0.5 * 2 / accelRad * acceldx;
-                grady += 0.5 * 2 / accelRad * acceldy;
-                gradz += 0.5 * 2 / accelRad * acceldz;
-                error += accelRad;
+            if (accelerometerPrediction != null) {
+                // Accelerometer-based additions to gradient.
+                double acceldx = loc.x - accelerometerPrediction[0];
+                double acceldy = loc.y - accelerometerPrediction[1];
+                double acceldz = loc.z - accelerometerPrediction[2];
+                double accelRad = Math.sqrt(acceldx * acceldx + acceldy * acceldy + acceldz * acceldz);
+                if (accelRad != 0) {
+                    // 0.1 is normalization constant
+                    gradient.x += 0.5 * 2 / accelRad * acceldx;
+                    gradient.y += 0.5 * 2 / accelRad * acceldy;
+                    gradient.z += 0.5 * 2 / accelRad * acceldz;
+                    error += accelRad;
+                }
             }
 
-            loc.x -= gradx * eta;
-            loc.y -= grady * eta;
-            loc.z -= gradz * eta;
+            loc = loc.subtract(gradient.scale(eta));
 
             if (loc.isInvalid()) {
                 loc = lastLocation;

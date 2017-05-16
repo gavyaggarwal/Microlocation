@@ -20,4 +20,22 @@ public class PointUnitTest {
         assertEquals(l1, l3);
         assertNotEquals(l2, l3);
     }
+    @Test
+    public void mathWorks() throws Exception {
+        Point l1 = new Point(1, 2, 3);
+        Point l2 = new Point(2, 4, 6);
+        Point l3 = new Point(3, 6, 9);
+        Point l4 = new Point(-1, -2, -3);
+
+        assertEquals(l2.add(l1), l3);
+        assertEquals(l1.add(l2), l3);
+        assertEquals(l4.add(l3), l2);
+
+        assertEquals(l3.subtract(l1), l2);
+        assertEquals(l3.subtract(l2), l1);
+        assertEquals(l2.subtract(l4), l3);
+
+        assertEquals(l1.scale(2), l2);
+        assertEquals(l2.scale(0.5f), l1);
+    }
 }

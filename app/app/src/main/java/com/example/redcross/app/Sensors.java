@@ -1,4 +1,4 @@
-package com.example.redcross.app.utils;
+package com.example.redcross.app;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -6,6 +6,9 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
+
+import com.example.redcross.app.utils.Device;
+import com.example.redcross.app.utils.MovingAverage;
 
 import java.util.Date;
 import java.util.LinkedList;
@@ -22,7 +25,7 @@ public class Sensors implements SensorEventListener {
     private final double HPA_PER_METER = 0.11179333;
     // The pressure decreases by 0.11179333 hPa for every meter increase in altitude
     public float referencePressure;
-    public float referenceHeight;
+    public double referenceHeight;
     public float currentPressure;
     private MovingAverage averager = new MovingAverage(1000);
 

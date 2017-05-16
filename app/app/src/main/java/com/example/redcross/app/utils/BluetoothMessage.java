@@ -23,9 +23,9 @@ public class BluetoothMessage {
     }
     public byte[] encode() {
         byte[] message = new byte[SIZE];
-        byte[] xArr = ByteBuffer.allocate(4).putFloat(loc.x).array();
-        byte[] yArr = ByteBuffer.allocate(4).putFloat(loc.y).array();
-        byte[] zArr = ByteBuffer.allocate(4).putFloat(loc.z).array();
+        byte[] xArr = ByteBuffer.allocate(4).putFloat((float) loc.x).array();
+        byte[] yArr = ByteBuffer.allocate(4).putFloat((float) loc.y).array();
+        byte[] zArr = ByteBuffer.allocate(4).putFloat((float) loc.z).array();
         message[0] = (byte) dev;
         System.arraycopy(xArr, 0, message, 1, 4);
         System.arraycopy(yArr, 0, message, 5, 4);

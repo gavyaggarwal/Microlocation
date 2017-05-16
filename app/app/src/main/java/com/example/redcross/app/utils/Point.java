@@ -5,15 +5,15 @@ package com.example.redcross.app.utils;
  */
 
 public class Point {
-    public float x;
-    public float y;
-    public float z;
+    public double x;
+    public double y;
+    public double z;
     public Point() {
         x = 0;
         y = 0;
         z = 0;
     }
-    public Point(float x_, float y_, float z_) {
+    public Point(double x_, double y_, double z_) {
         x = x_;
         y = y_;
         z = z_;
@@ -25,6 +25,18 @@ public class Point {
     }
     public boolean isInvalid() {
         return Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z);
+    }
+    public Point add(Point pt) {
+        return new Point(x + pt.x, y + pt.y, z + pt.z);
+    }
+    public Point subtract(Point pt) {
+        return new Point(x - pt.x, y - pt.y, z - pt.z);
+    }
+    public Point scale(double c) {
+        return new Point(x * c, y * c, z * c);
+    }
+    public double getNorm() {
+        return (float) Math.sqrt(x * x + y * y + z * z);
     }
     @Override
     public boolean equals(Object obj) {
