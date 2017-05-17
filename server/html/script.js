@@ -44,6 +44,12 @@ function updateLocationCharts(locations) {
           cameraPosition: {horizontal: 0.3, vertical: 0.1, distance: 2.0},
           style: 'dot-color',
           showLegend: false,
+          xMax: 5, 
+          yMax: 5,
+          zMax: 5,
+          xMin: -5, 
+          yMin: -5,
+          zMin: -5,
           xLabel: "X Position (meters)",
           yLabel: "Z Position (meters)",
           zLabel: "Y Position (meters)"
