@@ -54,4 +54,15 @@ public class Point {
         return "(" + x + ", " + y + ", " + z + ")";
     }
 
+    public double[] getLatLong(Point point) {
+        double lat = 34.139922;
+        double lon =  -118.124935;
+        double[] converted = {0, 0};
+
+        converted[0] = (point.y / 111111) + lat;
+        converted[1] = (point.x / (111111 * Math.cos(converted[0])) + lon);
+
+        return converted;
+    }
+
 }
