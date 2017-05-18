@@ -48,7 +48,7 @@ public class TrilaterationDemo {
 
     public static Point performTrilateration(Point[] positions, double[] distances, Point lastLocation, double ypres, float[] accelerometerPrediction) {
         // Perform a gradient descent to optimize the following objective function
-        //$$S = \sum^{n}_{i=1}{c_i(\sqrt{(x-x_i)^2 + (y-y_i)^2 + (z-z_i)^2} - d_i)^2} + \sqrt{(x-x_{old})^2 + (y-y_{old})^2 + (z-z_{old})^2}$$
+        //$$S = \sum^{n}_{i=1}{c_i(\sqrt{(x-x_i)^2 + (y-y_i)^2 + (z-z_i)^2} - d_i)^2} + \sqrt{(x-x_{old})^2 + (y-y_{old})^2 + (z-z_{old})^2 + 1} + (y-y_{pres})^2$$
 
         Point loc = new Point(lastLocation);
         if (loc.x == 0) {
@@ -61,7 +61,8 @@ public class TrilaterationDemo {
             loc.z = 1e-7f;
         }
 
-        double eta = 0.01;
+        final double ETA = 0.01;
+        double dx, dy, dz;
 
         for (int i = 0; i < 1000; i++) {
             double error = 0;
@@ -74,14 +75,25 @@ public class TrilaterationDemo {
                 gradient = gradient.add(delta.scale(2 * confidence * distanceError / rad));
                 error += confidence * distanceError * distanceError;
             }
-            Point normalizationDelta = loc.subtract(lastLocation);
-            double normalizationRad = normalizationDelta.getNorm();
-            if (normalizationRad != 0) {
-                // 0.5 is normalization constant
-                gradient = gradient.add(normalizationDelta.scale(0.5 * 2 / normalizationRad));
-                error += normalizationRad;
+
+            // Add Gradient Term for Normalization
+            final double NORMALIZATION_STRENGTH = 1.0;
+            dx = loc.x - lastLocation.x;
+            dy = loc.y - lastLocation.y;
+            dz = loc.z - lastLocation.z;
+            double rad = Math.sqrt(dx * dx + dy * dy + dz * dz + 1.0);
+            if (rad != 0) {
+                gradient.x += NORMALIZATION_STRENGTH * dx / rad;
+                gradient.y += NORMALIZATION_STRENGTH * dy / rad;
+                gradient.z += NORMALIZATION_STRENGTH * dz / rad;
+                error += NORMALIZATION_STRENGTH * rad;
             }
-            gradient.y += 2 * (loc.y - ypres) * 5;   // Pressure is fairly accurate, give it a strong influence
+
+            // Add Gradient Term for Barometric Adjustment
+            final double BAROMETER_STRENGTH = 5.0;
+            dy = loc.y - ypres;
+            gradient.y += BAROMETER_STRENGTH * 2 * dy;
+            error += BAROMETER_STRENGTH * dy * dy;
 
             if (accelerometerPrediction != null) {
                 // Accelerometer-based additions to gradient.
@@ -98,7 +110,8 @@ public class TrilaterationDemo {
                 }
             }
 
-            loc = loc.subtract(gradient.scale(eta));
+            loc = loc.subtract(gradient.scale(ETA));
+//            System.out.println(normalizationDelta + " " + gradient + " " + normalizationDelta.scale(0.5 * 2 / normalizationRad) + " " + 2 * (loc.y - ypres) * 5);
 
             if (loc.isInvalid()) {
                 loc = lastLocation;
