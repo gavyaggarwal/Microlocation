@@ -1,6 +1,7 @@
 package com.example.annie.locationdemo;
 
 import android.content.Context;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.RequiresApi;
@@ -12,6 +13,9 @@ import com.example.annie.locationdemo.utils.Point;
 import com.example.annie.locationdemo.utils.MovingAverage;
 import com.example.annie.locationdemo.Sensors;
 import com.example.annie.locationdemo.utils.Server;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,6 +26,7 @@ import java.util.Map;
  */
 
 public class TrilaterationDemo {
+
     private Handler mHandler = new Handler();
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)

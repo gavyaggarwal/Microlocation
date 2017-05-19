@@ -1,5 +1,15 @@
 package com.example.annie.locationdemo.utils;
 
+import android.content.Context;
+import android.location.Location;
+import android.location.LocationManager;
+import android.provider.Settings;
+import android.util.Log;
+
+import com.google.android.gms.maps.model.LatLng;
+
+import static com.example.annie.locationdemo.R.id.map;
+
 /**
  * Created by Annie on 5/17/17.
  */
@@ -52,6 +62,22 @@ public class Point {
     @Override
     public String toString() {
         return "(" + x + ", " + y + ", " + z + ")";
+    }
+
+    public static double[] getLatLong(Point pt) {
+        double lat = 34.137126;
+        double lon =  -118.123179;
+        double[] converted = {0, 0};
+
+        try {
+            Log.d("atLeastThis", "Hello");
+            converted[0] = (pt.y / 111111) + lat;
+            converted[1] = (pt.x / (111111 * Math.cos(converted[0])) + lon);} catch (NullPointerException e) {
+            converted[0] = 34.137160;
+            converted[1] = -118.123174;
+        }
+
+        return converted;
     }
 
 }
