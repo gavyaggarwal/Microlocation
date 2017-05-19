@@ -15,6 +15,7 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import com.example.redcross.app.demos.TrilaterationDemo;
 import com.example.redcross.app.utils.BluetoothMessage;
 import com.example.redcross.app.utils.Device;
 import com.example.redcross.app.utils.MovingAverage;
@@ -120,6 +121,8 @@ public class Bluetooth {
             RSSI = new MovingAverage(5000);
         };
         RSSI.add(rssi);
+
+        Log.d("RSSI", message.dev + " " + rssi + " " + RSSI.average() + " " + TrilaterationDemo.getDistance(rssi));
 
         if (message.loc.isInvalid()) {
             Log.d("errPars", Device.instance.id + " " + Device.instance.location + " location parse bad: " + message.loc + " " + message.dev);

@@ -38,7 +38,7 @@ public class TrilaterationDemo {
         mStatusChecker.run();
     }
 
-    private double getDistance(double rssi) {
+    public static double getDistance(double rssi) {
         if (rssi > -85.5){
             return 2.0747 * Math.exp(-0.0549 * rssi) / 100;
         } else {
@@ -95,20 +95,20 @@ public class TrilaterationDemo {
             gradient.y += BAROMETER_STRENGTH * 2 * dy;
             error += BAROMETER_STRENGTH * dy * dy;
 
-            if (accelerometerPrediction != null) {
-                // Accelerometer-based additions to gradient.
-                double acceldx = loc.x - accelerometerPrediction[0];
-                double acceldy = loc.y - accelerometerPrediction[1];
-                double acceldz = loc.z - accelerometerPrediction[2];
-                double accelRad = Math.sqrt(acceldx * acceldx + acceldy * acceldy + acceldz * acceldz);
-                if (accelRad != 0) {
-                    // 0.1 is normalization constant
-                    gradient.x += 0.5 * 2 / accelRad * acceldx;
-                    gradient.y += 0.5 * 2 / accelRad * acceldy;
-                    gradient.z += 0.5 * 2 / accelRad * acceldz;
-                    error += accelRad;
-                }
-            }
+//            if (accelerometerPrediction != null) {
+//                // Accelerometer-based additions to gradient.
+//                double acceldx = loc.x - accelerometerPrediction[0];
+//                double acceldy = loc.y - accelerometerPrediction[1];
+//                double acceldz = loc.z - accelerometerPrediction[2];
+//                double accelRad = Math.sqrt(acceldx * acceldx + acceldy * acceldy + acceldz * acceldz);
+//                if (accelRad != 0) {
+//                    // 0.1 is normalization constant
+//                    gradient.x += 0.5 * 2 / accelRad * acceldx;
+//                    gradient.y += 0.5 * 2 / accelRad * acceldy;
+//                    gradient.z += 0.5 * 2 / accelRad * acceldz;
+//                    error += accelRad;
+//                }
+//            }
 
             loc = loc.subtract(gradient.scale(ETA));
 //            System.out.println(normalizationDelta + " " + gradient + " " + normalizationDelta.scale(0.5 * 2 / normalizationRad) + " " + 2 * (loc.y - ypres) * 5);
