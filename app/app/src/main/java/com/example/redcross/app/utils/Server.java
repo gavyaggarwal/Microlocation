@@ -38,7 +38,7 @@ public class Server {
             String xStr = Double.toString(Device.instance.location.x);
             String yStr = Double.toString(Device.instance.location.y);
             String zStr = Double.toString(Device.instance.location.z);
-            client.send("{ \"device\": \"" + deviceID + "\", \"field\": \"Point\", \"x\": " +
+            client.send("{ \"device\": \"" + deviceID + "\", \"field\": \"Location\", \"x\": " +
                     xStr + ", \"y\": " + yStr + ", \"z\": " + zStr + "}");
         }
     }
