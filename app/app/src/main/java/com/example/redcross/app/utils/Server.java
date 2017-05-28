@@ -33,11 +33,11 @@ public class Server {
 
     }
 
-    public void sendLocation(float x, float y, float z) {
+    public void sendLocation() {
         if (connectionOpen && deviceID != null) {
-            String xStr = Float.toString(x);
-            String yStr = Float.toString(y);
-            String zStr = Float.toString(z);
+            String xStr = Double.toString(Device.instance.location.x);
+            String yStr = Double.toString(Device.instance.location.y);
+            String zStr = Double.toString(Device.instance.location.z);
             client.send("{ \"device\": \"" + deviceID + "\", \"field\": \"Location\", \"x\": " +
                     xStr + ", \"y\": " + yStr + ", \"z\": " + zStr + "}");
         }

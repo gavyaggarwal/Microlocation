@@ -1,4 +1,4 @@
-package com.example.redcross.app.utils;
+package com.example.annie.locationdemo;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -10,9 +10,13 @@ import android.util.Log;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Queue;
+import com.example.annie.locationdemo.utils.MovingAverage;
+import com.example.annie.locationdemo.utils.Device;
+
+
 
 /**
- * Created by gavya on 4/24/2017.
+ * Created by Annie on 5/16/17.
  */
 
 public class Sensors implements SensorEventListener {
@@ -22,7 +26,7 @@ public class Sensors implements SensorEventListener {
     private final double HPA_PER_METER = 0.11179333;
     // The pressure decreases by 0.11179333 hPa for every meter increase in altitude
     public float referencePressure;
-    public float referenceHeight;
+    public double referenceHeight;
     public float currentPressure;
     private MovingAverage averager = new MovingAverage(1000);
 
@@ -134,7 +138,7 @@ public class Sensors implements SensorEventListener {
             currentPressure = averagePressure;
             if (!getIsMoving()) {
                 referencePressure = averagePressure;
-                referenceHeight = Device.instance.y;
+                referenceHeight = Device.instance.location.y;
             }
         }
         if (mySensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
@@ -203,6 +207,7 @@ public class Sensors implements SensorEventListener {
                 currentVelocity[1] += linAccelZ * dT; // note the Y-Z switch.
                 currentVelocity[2] += linAccelY * dT;
 
+                // Set position accordingly.
                 if (currentAccelerometerPosition == null) {
                     currentAccelerometerPosition = new float[3];
                     currentAccelerometerPosition[0] = 0.0f;
@@ -211,8 +216,7 @@ public class Sensors implements SensorEventListener {
                 }
                 currentAccelerometerPosition[0] += currentVelocity[0] * dT;
                 currentAccelerometerPosition[1] += currentVelocity[1] * dT;
-                currentAccelerometerPosition[2] += currentVelocity[2] * dT;// Set position accordingly.
-
+                currentAccelerometerPosition[2] += currentVelocity[2] * dT;
             }
 
             // Calculate cardinal direction.

@@ -9,10 +9,10 @@ public class ServerUnitTester {
     public void sendLocation() throws Exception {
         Server server = new Server();
 
+        Device.instance.location = new Point(0, 1, 2);
+
         // Various tests for accuracy to see if sendLocation() fails
-        server.sendLocation(0, 0, 0);
-        server.sendLocation((float)0.0000, (float)0.0000, (float)0.0000);
-        server.sendLocation((float)1.0001, (float)1.0001, (float)1.0001);
+        server.sendLocation();
     }
 
     @Test

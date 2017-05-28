@@ -3,6 +3,8 @@ package com.example.redcross.app.utils;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 
+import com.example.redcross.app.Sensors;
+
 import org.junit.Test;
 import org.mockito.Mockito;
 

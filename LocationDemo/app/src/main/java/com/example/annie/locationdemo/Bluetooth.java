@@ -1,4 +1,4 @@
-package com.example.redcross.app.utils;
+package com.example.annie.locationdemo;
 
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
@@ -15,12 +15,19 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import com.example.annie.locationdemo.utils.BluetoothMessage;
+import com.example.annie.locationdemo.utils.Device;
+import com.example.annie.locationdemo.utils.MovingAverage;
+
+/**
+ * Created by Annie on 5/16/17.
+ */
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class Bluetooth {
@@ -33,9 +40,7 @@ public class Bluetooth {
     private BluetoothLeScanner scanner;
 
     public enum DataType {
-        X_COORDINATE,
-        Y_COORDINATE,
-        Z_COORDINATE,
+        LOCATION,
         RSSI_VALUE,
         DEVICE_NAME,
         UPDATE_TIME
@@ -59,7 +64,7 @@ public class Bluetooth {
 
         Log.d("LastMessage", String.valueOf((int) message[1]) + " " + String.valueOf((int) message[2]) + " " + String.valueOf((int) message[3]) + " " + String.valueOf((int) message[4]));
         Log.d("LastMessage", String.valueOf((int) message[9]) + " " + String.valueOf((int) message[10]) + " " + String.valueOf((int) message[11]) + " " + String.valueOf((int) message[12]));
-        Log.d("LastMessage", String.valueOf(Device.instance.x) + " " + String.valueOf(Device.instance.y) + " " + String.valueOf(Device.instance.z));
+        Log.d("LastMessage", Device.instance.location.toString());
 
 
         AdvertiseSettings adSettings = new AdvertiseSettings.Builder()
@@ -104,7 +109,7 @@ public class Bluetooth {
 
     private byte[] createMessage() {
         Device dev = Device.instance;
-        return new BluetoothMessage(dev.x, dev.y, dev.z, dev.id.charAt(0)).encode();
+        return new BluetoothMessage(dev.location, dev.id.charAt(0)).encode();
     }
 
     private void parseMessage(byte[] bytes, float rssi) {
@@ -120,21 +125,19 @@ public class Bluetooth {
         };
         RSSI.add(rssi);
 
-        if (Double.isNaN(message.x) || Double.isNaN(message.y) || Double.isNaN(message.z)) {
-            Log.d("errPars", Device.instance.id + " " + Device.instance.x + " location parse bad: " + message.x + " " + message.dev);
+        if (message.loc.isInvalid()) {
+            Log.d("errPars", Device.instance.id + " " + Device.instance.location + " location parse bad: " + message.loc + " " + message.dev);
 //            stopScanning();
 //            startScanning();
         }
         else {
             map.put(DataType.DEVICE_NAME, id);
-            map.put(DataType.X_COORDINATE, message.x);
-            map.put(DataType.Y_COORDINATE, message.y);
-            map.put(DataType.Z_COORDINATE, message.z);
+            map.put(DataType.LOCATION, message.loc);
             map.put(DataType.UPDATE_TIME, new Date().getTime());
             map.put(DataType.RSSI_VALUE, RSSI);
 
             devices.put(id, map);
-            Log.d("errPars", Device.instance.id + " " + Device.instance.x + " location parse good: " + message.x + " " + message.dev);
+            Log.d("errPars", Device.instance.id + " " + Device.instance.location + " location parse good: " + message.loc + " " + message.dev);
         }
 
     }

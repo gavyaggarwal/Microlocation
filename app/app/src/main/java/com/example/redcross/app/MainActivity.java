@@ -15,7 +15,6 @@ import android.util.Log;
 import android.widget.TextView;
 
 import com.example.redcross.app.demos.TrilaterationDemo;
-import com.example.redcross.app.utils.Sensors;
 import com.example.redcross.app.utils.Device;
 import com.example.redcross.app.utils.Server;
 

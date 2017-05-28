@@ -8,27 +8,24 @@ import java.nio.ByteBuffer;
 
 public class BluetoothMessage {
     public static final int SIZE = 13;
-    public final float x;
-    public final float y;
-    public final float z;
+    public final Point loc;
     public final char dev;
-    public BluetoothMessage(float x_, float y_, float z_, char dev_) {
-        x = x_;
-        y = y_;
-        z = z_;
+    public BluetoothMessage(Point loc_, char dev_) {
+        loc = loc_;
         dev = dev_;
     }
     public BluetoothMessage(byte[] message) {
         dev = (char) message[0];
-        x = ByteBuffer.wrap(message, 1, 4).getFloat();
-        y = ByteBuffer.wrap(message, 5, 4).getFloat();
-        z = ByteBuffer.wrap(message, 9, 4).getFloat();
+        float x = ByteBuffer.wrap(message, 1, 4).getFloat();
+        float y = ByteBuffer.wrap(message, 5, 4).getFloat();
+        float z = ByteBuffer.wrap(message, 9, 4).getFloat();
+        loc = new Point(x, y, z);
     }
     public byte[] encode() {
         byte[] message = new byte[SIZE];
-        byte[] xArr = ByteBuffer.allocate(4).putFloat(x).array();
-        byte[] yArr = ByteBuffer.allocate(4).putFloat(y).array();
-        byte[] zArr = ByteBuffer.allocate(4).putFloat(z).array();
+        byte[] xArr = ByteBuffer.allocate(4).putFloat((float) loc.x).array();
+        byte[] yArr = ByteBuffer.allocate(4).putFloat((float) loc.y).array();
+        byte[] zArr = ByteBuffer.allocate(4).putFloat((float) loc.z).array();
         message[0] = (byte) dev;
         System.arraycopy(xArr, 0, message, 1, 4);
         System.arraycopy(yArr, 0, message, 5, 4);
