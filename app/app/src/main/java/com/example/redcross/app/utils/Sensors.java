@@ -203,7 +203,6 @@ public class Sensors implements SensorEventListener {
                 currentVelocity[1] += linAccelZ * dT; // note the Y-Z switch.
                 currentVelocity[2] += linAccelY * dT;
 
-                // Set position accordingly.
                 if (currentAccelerometerPosition == null) {
                     currentAccelerometerPosition = new float[3];
                     currentAccelerometerPosition[0] = 0.0f;
@@ -212,7 +211,8 @@ public class Sensors implements SensorEventListener {
                 }
                 currentAccelerometerPosition[0] += currentVelocity[0] * dT;
                 currentAccelerometerPosition[1] += currentVelocity[1] * dT;
-                currentAccelerometerPosition[2] += currentVelocity[2] * dT;
+                currentAccelerometerPosition[2] += currentVelocity[2] * dT;// Set position accordingly.
+
             }
 
             // Calculate cardinal direction.
