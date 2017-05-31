@@ -6,6 +6,7 @@ import android.location.LocationManager;
 import android.provider.Settings;
 import android.util.Log;
 
+import com.example.annie.locationdemo.MapsActivity;
 import com.google.android.gms.maps.model.LatLng;
 
 import static com.example.annie.locationdemo.R.id.map;
@@ -15,6 +16,10 @@ import static com.example.annie.locationdemo.R.id.map;
  */
 
 public class Point {
+    static Location location;
+    static double[] initLocation;
+
+
     public double x;
     public double y;
     public double z;
@@ -65,8 +70,8 @@ public class Point {
     }
 
     public static double[] getLatLong(Point pt) {
-        double lat = 34.137126;
-        double lon =  -118.123179;
+        double lat = initLocation[0];
+        double lon = initLocation[1];
         double[] converted = {0, 0};
 
         try {
@@ -78,6 +83,11 @@ public class Point {
         }
 
         return converted;
+    }
+
+    public static void getInitialPoint() {
+        initLocation[0] = location.getLatitude();
+        initLocation[1] = location.getLongitude();
     }
 
 }

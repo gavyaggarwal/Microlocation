@@ -64,6 +64,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     Handler h = new Handler();
     int delay = 1000; //milliseconds
 
+    public LatLng firstLocation;
+
 
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
 
@@ -130,6 +132,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         //int backgroundColor = Color.parseColor(Device.instance.color);
         //getWindow().getDecorView().setBackgroundColor(backgroundColor);
+
+        //Get current location
+        Point.getInitialPoint();
 
         // Request necessary permissions
         requestPermissions();
@@ -318,4 +323,5 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
+
 }
