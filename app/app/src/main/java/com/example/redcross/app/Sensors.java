@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.example.redcross.app.utils.Device;
 import com.example.redcross.app.utils.MovingAverage;
+import com.example.redcross.app.utils.Server;
 
 import java.util.Date;
 import java.util.LinkedList;
@@ -29,6 +30,15 @@ public class Sensors implements SensorEventListener {
     public float currentPressure;
     private MovingAverage averager = new MovingAverage(1000);
 
+    private final float DEFAULT_ANGLE = 0;
+    private final float DEFAULT_SCALE = 1;
+    private int steps = 0;
+    private float x = 0;
+    private float z = 0;
+    private float angle = 0;
+    private float scale = 1;
+    private boolean calibrating = false;
+
     private class TimedMeasure {
         public float[] values;
         public float timestamp;
@@ -46,6 +56,7 @@ public class Sensors implements SensorEventListener {
 
     public void setContext(Context context) {
         Log.d("Sensors", "Turning on Sensors");
+
         SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
 
         Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -66,6 +77,9 @@ public class Sensors implements SensorEventListener {
         Sensor rotation = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         sensorManager.registerListener(this, rotation, SensorManager.SENSOR_DELAY_NORMAL);
 
+        Sensor stepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
+        sensorManager.registerListener(this, stepDetector, SensorManager.SENSOR_DELAY_FASTEST);
+
         currentVelocity = new float[3];
         currentVelocity[0] = 0.0f;
         currentVelocity[1] = 0.0f;
@@ -76,7 +90,53 @@ public class Sensors implements SensorEventListener {
         currentAccelerometerPosition = null;
 
         accMeasurements = new LinkedList<TimedMeasure>();
-        magMeasurements = new LinkedList<TimedMeasure>();    }
+        magMeasurements = new LinkedList<TimedMeasure>();
+    }
+
+    public void startCalibrating() {
+        calibrating = true;
+        x = 0;
+        z = 0;
+        angle = 0;
+        scale = 1;
+    }
+
+    public void stopCalibrating() {
+        final double eta = 0.005;
+        double newAngle = 0.0;
+        double newScale = 1.0;
+        double error = 0;
+        double x_ = 0;
+        double z_ = 10;
+        for (int i = 0; i < 1000; i++) {
+            double cos = Math.cos(newAngle);
+            double sin = Math.sin(newAngle);
+
+            double rx = x * cos - z * sin;
+            double drx = 0 - x * sin - z * cos;
+
+            double rz = x * sin + z * cos;
+            double drz = x * cos - z * sin;
+
+            double dx = newScale * rx - x_;
+            double dz = newScale * rz - z_;
+            double rad = Math.sqrt(dx * dx + dz * dz + 1);
+
+            double grads = (dx * rx + dz * rz) / rad;
+            double grada = (dx * drx + dz * drz) * newScale / rad;
+            error = Math.sqrt(dx * dx + dz * dz);
+
+            newAngle -= grada * eta;
+            newScale -= grads * eta;
+        }
+
+        calibrating = false;
+        x = 0;
+        z = 0;
+        angle = (float) newAngle;
+        scale = (float) newScale;
+        Log.d("PDRCalibration", "Finished: Angle = " + angle + ", Scale = " + scale + ", Error = " + error);
+    }
 
     public boolean getIsMoving() {
         return isCurrentlyMoving || new Date().getTime() - updateTime < 1000;
@@ -155,6 +215,16 @@ public class Sensors implements SensorEventListener {
         if (mySensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             safeQueueAdd(accMeasurements, event.values, event.timestamp);
         }
+        if (mySensor.getType() == Sensor.TYPE_STEP_DETECTOR) {
+            steps += 1;
+            x += scale * Math.cos(Math.toRadians(currentCardinalDirection) + angle);
+            z += scale * Math.sin(Math.toRadians(currentCardinalDirection) + angle);
+            Server.instance.sendDebug("Step", (float)steps);
+            if (!calibrating) {
+                Server.instance.sendDebug("X", x);
+                Server.instance.sendDebug("Z", z);
+            }
+        }
         if (mySensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
             safeQueueAdd(magMeasurements, event.values, event.timestamp);
         }
@@ -232,6 +302,7 @@ public class Sensors implements SensorEventListener {
                 float orientationAzimuth = orientation[0];
 
                 currentCardinalDirection = (float)(Math.toDegrees(orientationAzimuth)+360) % 360;
+                Log.d("CurrentRotation", "A" + currentCardinalDirection);
             }
         }
     }

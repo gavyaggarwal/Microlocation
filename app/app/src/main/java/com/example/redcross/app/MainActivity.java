@@ -12,7 +12,10 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.WindowManager;
+import android.widget.CompoundButton;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import com.example.redcross.app.demos.TrilaterationDemo;
 import com.example.redcross.app.utils.Device;
@@ -26,9 +29,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Disable Screen from Turning Off
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         // Initialize Device Manager and Server Connection
         Device.instance.setContext(this);
         Server.instance.deviceID = Device.instance.id;
+
+        // Turn on sensors
+        Sensors.instance.setContext(this);
 
         // Initialize Broadcast Reciever to manage Wi-Fi connection
         registerReceiver(
@@ -42,6 +51,18 @@ public class MainActivity extends AppCompatActivity {
 
         int backgroundColor = Color.parseColor(Device.instance.color);
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
+
+        ToggleButton button = (ToggleButton)findViewById(R.id.toggleButton) ;
+        button.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton toggleButton, boolean isChecked) {
+                if (isChecked) {
+                    Sensors.instance.startCalibrating();
+                } else {
+                    Sensors.instance.stopCalibrating();
+                }
+            }
+        }) ;
 
         // Request necessary permissions
         requestPermissions();

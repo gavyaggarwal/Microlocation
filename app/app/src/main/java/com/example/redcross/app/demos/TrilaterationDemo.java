@@ -28,9 +28,6 @@ public class TrilaterationDemo {
     public TrilaterationDemo(Context context) {
         Log.d("Trilateration", "Started");
 
-        // Turn on sensors
-        Sensors.instance.setContext(context);
-
 
         // Start bluetooth advertising + scanning
         Bluetooth.instance.start();
