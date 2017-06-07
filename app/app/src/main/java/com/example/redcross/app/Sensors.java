@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.example.redcross.app.utils.Device;
 import com.example.redcross.app.utils.MovingAverage;
+import com.example.redcross.app.utils.Point;
 import com.example.redcross.app.utils.Server;
 
 import java.util.Date;
@@ -136,6 +137,15 @@ public class Sensors implements SensorEventListener {
         angle = (float) newAngle;
         scale = (float) newScale;
         Log.d("PDRCalibration", "Finished: Angle = " + angle + ", Scale = " + scale + ", Error = " + error);
+    }
+
+    public Point getPDR() {
+        return new Point(x, 0, z);
+    }
+
+    public void resetPDR() {
+        x = 0;
+        z = 0;
     }
 
     public boolean getIsMoving() {

@@ -43,7 +43,7 @@ public class TrilaterationDemo {
         }
     };
 
-    public static Point performTrilateration(Point[] positions, double[] distances, Point lastLocation, double ypres, float[] accelerometerPrediction) {
+    public static Point performTrilateration(Point[] positions, double[] distances, Point lastLocation, double ypres, float[] accelerometerPrediction, Point pdrPrediction) {
         // Perform a gradient descent to optimize the following objective function
         //$$S = \sum^{n}_{i=1}{c_i(\sqrt{(x-x_i)^2 + (y-y_i)^2 + (z-z_i)^2} - d_i)^2} + \sqrt{(x-x_{old})^2 + (y-y_{old})^2 + (z-z_{old})^2 + 1} + (y-y_{pres})^2$$
 
@@ -59,14 +59,14 @@ public class TrilaterationDemo {
         }
 
         final double ETA = 0.01;
-        double dx, dy, dz;
+        double dx, dy, dz, rad;
 
         for (int i = 0; i < 1000; i++) {
             double error = 0;
             Point gradient = new Point();
             for (int j = 0; j < positions.length; j++) {
                 Point delta = loc.subtract(positions[j]);
-                double rad = delta.getNorm();
+                rad = delta.getNorm();
                 double confidence = 1.0 / (distances[j] + 1);
                 double distanceError = rad - distances[j];
                 gradient = gradient.add(delta.scale(2 * confidence * distanceError / rad));
@@ -78,7 +78,7 @@ public class TrilaterationDemo {
             dx = loc.x - lastLocation.x;
             dy = loc.y - lastLocation.y;
             dz = loc.z - lastLocation.z;
-            double rad = Math.sqrt(dx * dx + dy * dy + dz * dz + 1.0);
+            rad = Math.sqrt(dx * dx + dy * dy + dz * dz + 1.0);
             if (rad != 0) {
                 gradient.x += NORMALIZATION_STRENGTH * dx / rad;
                 gradient.y += NORMALIZATION_STRENGTH * dy / rad;
@@ -91,6 +91,18 @@ public class TrilaterationDemo {
             dy = loc.y - ypres;
             gradient.y += BAROMETER_STRENGTH * 2 * dy;
             error += BAROMETER_STRENGTH * dy * dy;
+
+            // Add Gradient Term for Pedestrian Dead Reckoning Adjustment
+            final double PDR_STRENGTH = 2.0;
+            dx = loc.x - (lastLocation.x + pdrPrediction.x);
+            dz = loc.z - (lastLocation.z + pdrPrediction.z);
+            rad = Math.sqrt(dx * dx + dz * dz + 1.0);
+            if (rad != 0) {
+                gradient.x += PDR_STRENGTH * dx / rad;
+                gradient.y += PDR_STRENGTH * dz / rad;
+                error += PDR_STRENGTH * rad;
+            }
+
 
 //            if (accelerometerPrediction != null) {
 //                // Accelerometer-based additions to gradient.
@@ -180,10 +192,11 @@ public class TrilaterationDemo {
                     ArrayList<Map<Bluetooth.DataType, Object>> devices = Bluetooth.instance.getNearbyDevices();
                     double y_barometer = Sensors.instance.estimatedHeight();
                     float[] accelerometerPrediction = Sensors.instance.getCurrentAccelerometerPosition();
+                    Point pdrPrediction = Sensors.instance.getPDR();
+                    Sensors.instance.resetPDR();
 
                     Point[] positions = new Point[devices.size()];
                     double[] distances = new double[devices.size()];
-
 
 
                     for (int i = 0; i < devices.size(); i++) {
@@ -205,7 +218,7 @@ public class TrilaterationDemo {
 
                     // the answer
                     //double[] centroid = optimum.getPoint().toArray();
-                    Point centroid = performTrilateration(positions, distances, Device.instance.location, y_barometer, accelerometerPrediction);
+                    Point centroid = performTrilateration(positions, distances, Device.instance.location, y_barometer, accelerometerPrediction, pdrPrediction);
 
 
 //                    if (devices.size() > 3) {
